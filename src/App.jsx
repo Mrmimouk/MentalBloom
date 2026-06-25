@@ -1,5 +1,123 @@
 import { useState, useEffect, useRef } from "react";
 
+// ─── Supabase config ──────────────────────────────────────────
+const SUPABASE_URL = "https://umhfmhvzttifqdenriwq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_p5H4tjNv8q0Wta_OuRugwA_CE8NLcev";
+
+const supabase = {
+  async signUp(email, password, metadata) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+      body: JSON.stringify({ email, password, data: metadata })
+    });
+    return res.json();
+  },
+
+  async signIn(email, password) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+      body: JSON.stringify({ email, password })
+    });
+    return res.json();
+  },
+
+  async signOut(token) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` }
+    });
+  },
+
+  async getMessages(contactId, token) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/messages?or=(sender_id.eq.${contactId},receiver_id.eq.${contactId})&order=created_at.asc`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    return res.json();
+  },
+
+  async sendMessage(msg, token) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(msg)
+    });
+    return res.json();
+  },
+
+  async getPosts(token) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/community_posts?order=created_at.desc&limit=20`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    return res.json();
+  },
+
+  async createPost(post, token) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/community_posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(post)
+    });
+    return res.json();
+  },
+
+  async saveHumeur(data, token) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/humeur_logs`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(data)
+    });
+    return res.json();
+  },
+
+  async getHumeur(userId, token) {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/humeur_logs?user_id=eq.${userId}&order=created_at.desc&limit=7`,
+      { headers: { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${token}` } }
+    );
+    return res.json();
+  },
+
+  subscribeToMessages(callback) {
+    // Realtime via websocket
+    const ws = new WebSocket(
+      `wss://umhfmhvzttifqdenriwq.supabase.co/realtime/v1/websocket?apikey=${SUPABASE_KEY}&vsn=1.0.0`
+    );
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        topic: "realtime:public:messages",
+        event: "phx_join",
+        payload: {},
+        ref: "1"
+      }));
+    };
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.event === "INSERT") callback(data.payload.record);
+    };
+    return ws;
+  }
+};
+
+
 // ─── Design tokens (lilas pastel + vert doux, style Animal Crossing doux) ───
 const C = {
   bg: "#F4F0FA",
@@ -24,8 +142,10 @@ const C = {
 
 // ─── Screens ─────────────────────────────────────────────────
 const S = {
-  HOME: "home", AVATAR: "avatar", HOUSE: "house",
+  HOME: "home",
   QUESTS: "quests", GAME: "game", BREATHE: "breathe",
+  SCAN: "scan", JOURNAL: "journal", GRATITUDE: "gratitude", COGNITIF: "cognitif",
+  COMMUNAUTE: "communaute", HUMEUR: "humeur", URGENCES: "urgences", RAPPELS: "rappels",
   CHAT: "chat", CHAT_ROOM: "chat_room", LIVE: "live",
   RESOURCES: "resources", FICHE: "fiche", PROFILE: "profile",
 };
@@ -95,23 +215,6 @@ const URGENCES = [
   { nom: "Clinique des Lilas", ville: "Les Lilas (93)", tel: "01 49 72 72 00", ouvert: "24h/24" },
 ];
 
-// ─── Avatar config ────────────────────────────────────────────
-const AVATAR_COLORS = ["#C4AEE8", "#A8D8B9", "#F4B8D0", "#F9D89A", "#A8C8E8"];
-const AVATAR_TOPS = ["👒", "🎩", "🪖", "⛑️", "🎓", "✨"];
-const AVATAR_ACCS = ["🌸", "⭐", "🌈", "🦋", "🍀", "💜"];
-
-// ─── House items ──────────────────────────────────────────────
-const SHOP_ITEMS = [
-  { id: "plant", icon: "🪴", name: "Plante verte", cost: 20, category: "deco" },
-  { id: "lamp", icon: "🪔", name: "Lampe douce", cost: 30, category: "deco" },
-  { id: "book", icon: "📚", name: "Étagère de livres", cost: 40, category: "meubles" },
-  { id: "sofa", icon: "🛋️", name: "Canapé confort", cost: 60, category: "meubles" },
-  { id: "cat", icon: "🐱", name: "Chat câlin", cost: 80, category: "compagnon" },
-  { id: "star", icon: "⭐", name: "Étoile filante", cost: 50, category: "deco" },
-  { id: "rainbow", icon: "🌈", name: "Arc-en-ciel", cost: 45, category: "deco" },
-  { id: "music", icon: "🎵", name: "Boîte à musique", cost: 35, category: "deco" },
-];
-
 // ─── Components ───────────────────────────────────────────────
 
 function Tag({ label, color, bg }) {
@@ -159,19 +262,19 @@ function BackBtn({ onBack }) {
 
 // ─── Screens ──────────────────────────────────────────────────
 
-function HomeScreen({ setScreen, quests, coins, avatar }) {
+function HomeScreen({ setScreen, quests, coins, user }) {
   const done = quests.filter(q => q.done).length;
   return (
     <div style={{ padding: "20px 16px" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Bonjour 🌸</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Bonjour {user?.prenom || ""} 🌸</div>
           <div style={{ fontSize: 13, color: C.muted }}>Comment tu vas aujourd'hui ?</div>
         </div>
         <button onClick={() => setScreen(S.PROFILE)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-          <div style={{ width: 46, height: 46, borderRadius: "50%", background: avatar.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, boxShadow: `0 2px 8px ${avatar.color}66` }}>
-            {avatar.top}
+          <div style={{ width: 46, height: 46, borderRadius: "50%", background: C.purple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, boxShadow: `0 2px 8px ${C.purple}66` }}>
+            🌸
           </div>
         </button>
       </div>
@@ -218,19 +321,15 @@ function HomeScreen({ setScreen, quests, coins, avatar }) {
         ))}
       </div>
 
-      {/* Ma maison */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        <Card onClick={() => setScreen(S.HOUSE)} style={{ flex: 1, textAlign: "center", padding: 14 }}>
-          <div style={{ fontSize: 32 }}>🏡</div>
-          <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginTop: 4 }}>Ma maison</div>
-        </Card>
-        <Card onClick={() => setScreen(S.AVATAR)} style={{ flex: 1, textAlign: "center", padding: 14 }}>
-          <div style={{ fontSize: 32 }}>👤</div>
-          <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginTop: 4 }}>Mon avatar</div>
-        </Card>
-        <Card onClick={() => setScreen(S.LIVE)} style={{ flex: 1, textAlign: "center", padding: 14 }}>
+      {/* Lives */}
+      <div style={{ marginBottom: 20 }}>
+        <Card onClick={() => setScreen(S.LIVE)} style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: 32 }}>🎙️</div>
-          <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginTop: 4 }}>Lives</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>Lives avec des professionnels</div>
+            <div style={{ fontSize: 12, color: C.muted }}>2 à 3 par semaine</div>
+          </div>
+          <span style={{ marginLeft: "auto", color: C.purple }}>→</span>
         </Card>
       </div>
 
@@ -295,115 +394,13 @@ function QuestsScreen({ onBack, quests, setQuests, addCoins, mode }) {
   );
 }
 
-function AvatarScreen({ onBack, avatar, setAvatar, coins, spendCoins }) {
-  return (
-    <div style={{ padding: "20px 16px" }}>
-      <BackBtn onBack={onBack} />
-      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Mon avatar 👤</div>
-      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Personnalise ton petit personnage</div>
-
-      {/* Preview */}
-      <Card style={{ textAlign: "center", padding: 32, marginBottom: 20, background: `linear-gradient(135deg, ${C.purplePale}, ${C.greenPale})`, border: "none" }}>
-        <div style={{ width: 100, height: 100, borderRadius: "50%", background: avatar.color, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 42, boxShadow: `0 4px 20px ${avatar.color}88` }}>
-          {avatar.top}
-        </div>
-        <div style={{ fontSize: 24, marginTop: 8 }}>{avatar.acc}</div>
-        <div style={{ fontWeight: 700, color: C.text, marginTop: 4 }}>Ton avatar</div>
-      </Card>
-
-      <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>Couleur</div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {AVATAR_COLORS.map(c => (
-          <button key={c} onClick={() => setAvatar(a => ({ ...a, color: c }))} style={{ width: 38, height: 38, borderRadius: "50%", background: c, border: avatar.color === c ? `3px solid ${C.purple}` : "3px solid transparent", cursor: "pointer" }} />
-        ))}
-      </div>
-
-      <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>Chapeau / coiffure</div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        {AVATAR_TOPS.map(t => (
-          <button key={t} onClick={() => setAvatar(a => ({ ...a, top: t }))} style={{ width: 44, height: 44, borderRadius: 12, background: avatar.top === t ? C.purplePale : C.bg, border: avatar.top === t ? `2px solid ${C.purple}` : `2px solid ${C.border}`, fontSize: 22, cursor: "pointer" }}>
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>Accessoire</div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {AVATAR_ACCS.map(a => (
-          <button key={a} onClick={() => setAvatar(av => ({ ...av, acc: a }))} style={{ width: 44, height: 44, borderRadius: 12, background: avatar.acc === a ? C.purplePale : C.bg, border: avatar.acc === a ? `2px solid ${C.purple}` : `2px solid ${C.border}`, fontSize: 22, cursor: "pointer" }}>
-            {a}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function HouseScreen({ onBack, house, setHouse, coins, spendCoins }) {
-  const [tab, setTab] = useState("maison");
-  return (
-    <div style={{ padding: "20px 16px" }}>
-      <BackBtn onBack={onBack} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Ma maison 🏡</div>
-        <div style={{ fontWeight: 700, color: C.purple }}>🪙 {coins}</div>
-      </div>
-      <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Décore ton espace avec tes PsychoCoins</div>
-
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {["maison", "boutique"].map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 20, border: "none", background: tab === t ? C.purple : C.border, color: tab === t ? "#fff" : C.muted, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            {t === "maison" ? "Ma maison" : "Boutique"}
-          </button>
-        ))}
-      </div>
-
-      {tab === "maison" && (
-        <>
-          <Card style={{ background: `linear-gradient(135deg, #E8F4E8, #F4E8F8)`, border: "none", minHeight: 200, textAlign: "center", padding: 20, marginBottom: 16 }}>
-            <div style={{ fontSize: 48, marginBottom: 8 }}>🏠</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-              {house.map(id => {
-                const item = SHOP_ITEMS.find(i => i.id === id);
-                return item ? <span key={id} style={{ fontSize: 32 }}>{item.icon}</span> : null;
-              })}
-              {house.length === 0 && <div style={{ color: C.muted, fontSize: 13 }}>Ta maison est vide… visite la boutique ! 🛍️</div>}
-            </div>
-          </Card>
-        </>
-      )}
-
-      {tab === "boutique" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {SHOP_ITEMS.map(item => {
-            const owned = house.includes(item.id);
-            const canBuy = coins >= item.cost && !owned;
-            return (
-              <Card key={item.id} style={{ textAlign: "center", padding: 14, opacity: owned ? 0.6 : 1 }}>
-                <div style={{ fontSize: 36 }}>{item.icon}</div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: C.text, marginTop: 6 }}>{item.name}</div>
-                <div style={{ fontSize: 12, color: C.muted }}>🪙 {item.cost}</div>
-                {owned
-                  ? <div style={{ fontSize: 11, color: C.green, fontWeight: 700, marginTop: 6 }}>✓ Possédé</div>
-                  : <Btn small onClick={() => { if (canBuy) { spendCoins(item.cost); setHouse(h => [...h, item.id]); } }} color={canBuy ? C.purple : C.muted} style={{ marginTop: 8, padding: "6px 14px", fontSize: 12 }}>Acheter</Btn>
-                }
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function GameScreen({ onBack, setScreen }) {
   const games = [
     { icon: "🌬️", title: "Respiration guidée", desc: "Technique 4-4-6 pour calmer l'anxiété", s: S.BREATHE, color: C.purple, ready: true },
-    { icon: "🌿", title: "Scan corporel", desc: "Reconnecte-toi à ton corps", s: null, color: C.green, ready: false },
-    { icon: "📓", title: "Journal des émotions", desc: "Pose tes pensées, observe tes humeurs", s: null, color: C.orange, ready: false },
-    { icon: "🌟", title: "Gratitude du jour", desc: "3 choses positives d'aujourd'hui", s: null, color: C.yellow, ready: false },
-    { icon: "🧩", title: "Défis cognitifs doux", desc: "Stimule ton esprit en douceur", s: null, color: C.pink, ready: false },
+    { icon: "🌿", title: "Scan corporel", desc: "Reconnecte-toi à ton corps", s: S.SCAN, color: C.green, ready: true },
+    { icon: "📓", title: "Journal des émotions", desc: "Pose tes pensées, observe tes humeurs", s: S.JOURNAL, color: C.orange, ready: true },
+    { icon: "🌟", title: "Gratitude du jour", desc: "3 choses positives d'aujourd'hui", s: S.GRATITUDE, color: C.yellow, ready: true },
+    { icon: "🧩", title: "Défis cognitifs doux", desc: "Stimule ton esprit en douceur", s: S.COGNITIF, color: C.pink, ready: true },
   ];
   return (
     <div style={{ padding: "20px 16px" }}>
@@ -472,6 +469,858 @@ function BreatheScreen({ onBack }) {
   );
 }
 
+
+// ─── Scan corporel ───────────────────────────────────────────
+function ScanScreen({ onBack, addCoins }) {
+  const steps = [
+    { zone: "Pieds", emoji: "🦶", instruction: "Sens le contact de tes pieds avec le sol. Sont-ils chauds, froids, lourds ?" },
+    { zone: "Jambes", emoji: "🦵", instruction: "Remarque tes jambes. Y a-t-il des tensions, des picotements ?" },
+    { zone: "Ventre", emoji: "🫁", instruction: "Pose ta main sur ton ventre. Sens-tu ta respiration ?" },
+    { zone: "Poitrine", emoji: "❤️", instruction: "Écoute ton cœur. Bat-il vite ou lentement ?" },
+    { zone: "Épaules", emoji: "💪", instruction: "Tes épaules sont-elles crispées ? Essaie de les relâcher." },
+    { zone: "Visage", emoji: "😌", instruction: "Détends ta mâchoire, ton front, tes yeux. Laisse tout se relâcher." },
+  ];
+  const [step, setStep] = useState(0);
+  const [done, setDone] = useState(false);
+  const [started, setStarted] = useState(false);
+
+  const next = () => {
+    if (step < steps.length - 1) setStep(s => s + 1);
+    else { setDone(true); addCoins(15); }
+  };
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Scan corporel 🌿</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>Reconnecte-toi à ton corps, étape par étape</div>
+
+      {!started && !done && (
+        <>
+          <Card style={{ background: C.greenPale, border: "none", marginBottom: 20 }}>
+            <p style={{ margin: 0, fontSize: 14, color: C.text, lineHeight: 1.7 }}>
+              🌿 Le scan corporel t'aide à quitter ta tête et revenir dans ton corps. Installe-toi confortablement, assis ou allongé.
+            </p>
+          </Card>
+          <Btn onClick={() => setStarted(true)} color={C.green} style={{ width: "100%" }}>
+            Commencer le scan
+          </Btn>
+        </>
+      )}
+
+      {started && !done && (
+        <>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            {steps.map((s, i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", margin: "0 4px",
+                background: i <= step ? C.green : C.border, transition: "background 0.3s" }} />
+            ))}
+          </div>
+
+          <Card style={{ background: `linear-gradient(135deg, ${C.greenPale}, ${C.purplePale})`, border: "none", textAlign: "center", padding: 32, marginBottom: 20 }}>
+            <div style={{ fontSize: 64, marginBottom: 12 }}>{steps[step].emoji}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 12 }}>{steps[step].zone}</div>
+            <p style={{ fontSize: 15, color: C.text, lineHeight: 1.8, margin: 0 }}>{steps[step].instruction}</p>
+          </Card>
+
+          <div style={{ fontSize: 13, color: C.muted, textAlign: "center", marginBottom: 16 }}>
+            Étape {step + 1} / {steps.length}
+          </div>
+
+          <Btn onClick={next} color={C.green} style={{ width: "100%" }}>
+            {step < steps.length - 1 ? "Étape suivante →" : "Terminer ✓"}
+          </Btn>
+        </>
+      )}
+
+      {done && (
+        <>
+          <Card style={{ background: C.greenPale, border: "none", textAlign: "center", padding: 32, marginBottom: 20 }}>
+            <div style={{ fontSize: 64, marginBottom: 12 }}>✨</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8 }}>Bravo !</div>
+            <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Tu viens de traverser ton corps avec bienveillance. +15 PsychoCoins gagnés 🪙</p>
+          </Card>
+          <Btn onClick={onBack} color={C.green} style={{ width: "100%" }}>Retour aux activités</Btn>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Journal des émotions ─────────────────────────────────────
+function JournalScreen({ onBack, addCoins }) {
+  const EMOTIONS = [
+    { emoji: "😊", label: "Joyeux·se" }, { emoji: "😔", label: "Triste" },
+    { emoji: "😰", label: "Anxieux·se" }, { emoji: "😡", label: "En colère" },
+    { emoji: "😴", label: "Fatigué·e" }, { emoji: "😌", label: "Calme" },
+    { emoji: "🥰", label: "Aimé·e" }, { emoji: "😕", label: "Confus·e" },
+    { emoji: "😤", label: "Frustré·e" }, { emoji: "🤗", label: "Reconnaissant·e" },
+  ];
+  const [emotion, setEmotion] = useState(null);
+  const [intensity, setIntensity] = useState(3);
+  const [text, setText] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const save = () => {
+    if (!emotion) return;
+    setSaved(true);
+    addCoins(10);
+  };
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Journal des émotions 📓</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Pose tes pensées, observe tes humeurs</div>
+
+      {!saved ? (
+        <>
+          <Card style={{ marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, color: C.text, marginBottom: 12 }}>Comment tu te sens là, maintenant ?</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {EMOTIONS.map(e => (
+                <button key={e.label} onClick={() => setEmotion(e)}
+                  style={{ padding: "8px 12px", borderRadius: 20, border: "none", cursor: "pointer",
+                    background: emotion?.label === e.label ? C.orange : C.bg,
+                    color: emotion?.label === e.label ? "#fff" : C.text,
+                    fontWeight: emotion?.label === e.label ? 700 : 400,
+                    fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                  {e.emoji} {e.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {emotion && (
+            <>
+              <Card style={{ marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, color: C.text, marginBottom: 12 }}>
+                  Intensité : {["","😶","🙂","😐","😟","😣"][intensity]}
+                </div>
+                <input type="range" min="1" max="5" value={intensity}
+                  onChange={e => setIntensity(Number(e.target.value))}
+                  style={{ width: "100%", accentColor: C.orange }} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted, marginTop: 4 }}>
+                  <span>Légère</span><span>Intense</span>
+                </div>
+              </Card>
+
+              <Card style={{ marginBottom: 20 }}>
+                <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                  Tu veux en dire plus ? (optionnel)
+                </div>
+                <textarea value={text} onChange={e => setText(e.target.value)}
+                  placeholder="Ce qui se passe en moi en ce moment..."
+                  style={{ width: "100%", minHeight: 100, padding: 12, borderRadius: 12,
+                    border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+                    background: C.bg, resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </Card>
+
+              <Btn onClick={save} color={C.orange} style={{ width: "100%" }}>
+                💾 Enregistrer dans mon journal
+              </Btn>
+            </>
+          )}
+        </>
+      ) : (
+        <Card style={{ background: C.orangePale, border: "none", textAlign: "center", padding: 32 }}>
+          <div style={{ fontSize: 64, marginBottom: 12 }}>{emotion?.emoji}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8 }}>Noté !</div>
+          <p style={{ fontSize: 14, color: C.muted, margin: "0 0 20px" }}>
+            Mettre des mots sur ses émotions, c'est déjà prendre soin de soi. +10 PsychoCoins 🪙
+          </p>
+          <Btn onClick={onBack} color={C.orange} style={{ width: "100%" }}>Retour aux activités</Btn>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── Gratitude du jour ────────────────────────────────────────
+function GratitudeScreen({ onBack, addCoins }) {
+  const SUGGESTIONS = [
+    "Un moment agréable aujourd'hui", "Quelqu'un qui compte pour toi",
+    "Quelque chose de beau que tu as vu", "Une chose que ton corps a faite pour toi",
+    "Un petit plaisir simple", "Une force que tu as en toi",
+  ];
+  const [items, setItems] = useState(["", "", ""]);
+  const [saved, setSaved] = useState(false);
+
+  const update = (i, val) => setItems(prev => prev.map((x, idx) => idx === i ? val : x));
+  const canSave = items.filter(x => x.trim()).length >= 1;
+
+  const save = () => {
+    setSaved(true);
+    addCoins(10);
+  };
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Gratitude du jour 🌟</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>3 petites choses positives d'aujourd'hui</div>
+
+      {!saved ? (
+        <>
+          <Card style={{ background: C.yellowPale, border: "none", marginBottom: 20 }}>
+            <p style={{ margin: 0, fontSize: 14, color: C.text, lineHeight: 1.7 }}>
+              ✨ La gratitude ne demande pas que tout aille bien. Même un tout petit moment compte.
+            </p>
+          </Card>
+
+          {items.map((item, i) => (
+            <Card key={i} style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>
+                {["🌟", "💛", "✨"][i]} Chose {i + 1}
+              </div>
+              <input value={item} onChange={e => update(i, e.target.value)}
+                placeholder={SUGGESTIONS[Math.floor(Math.random() * SUGGESTIONS.length)]}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: 12,
+                  border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+                  background: C.bg, fontFamily: "inherit", boxSizing: "border-box" }} />
+            </Card>
+          ))}
+
+          <Btn onClick={save} color={C.yellow} style={{ width: "100%", marginTop: 8, color: C.text }}
+            disabled={!canSave}>
+            🌟 Sauvegarder ma gratitude
+          </Btn>
+        </>
+      ) : (
+        <Card style={{ background: C.yellowPale, border: "none", textAlign: "center", padding: 32 }}>
+          <div style={{ fontSize: 64, marginBottom: 12 }}>🌟</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8 }}>Magnifique !</div>
+          <div style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>
+            {items.filter(x => x.trim()).map((x, i) => (
+              <div key={i} style={{ padding: "6px 0", borderBottom: i < items.filter(x=>x.trim()).length-1 ? `1px solid ${C.border}` : "none" }}>
+                {["🌟","💛","✨"][i]} {x}
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>+10 PsychoCoins gagnés 🪙</p>
+          <Btn onClick={onBack} color={C.yellow} style={{ width: "100%", color: C.text }}>Retour aux activités</Btn>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── Défis cognitifs doux ─────────────────────────────────────
+function CognitifScreen({ onBack, addCoins }) {
+  const DEFIS = [
+    {
+      id: 1, title: "5-4-3-2-1", emoji: "👁️",
+      desc: "Un exercice d'ancrage pour revenir au présent",
+      steps: [
+        { n: 5, sense: "👁️", label: "choses que tu VOIS autour de toi" },
+        { n: 4, sense: "🤚", label: "choses que tu peux TOUCHER" },
+        { n: 3, sense: "👂", label: "choses que tu ENTENDS" },
+        { n: 2, sense: "👃", label: "choses que tu SENS (odeurs)" },
+        { n: 1, sense: "👅", label: "chose que tu GOÛTES" },
+      ]
+    },
+    {
+      id: 2, title: "Pensée alternative", emoji: "💭",
+      desc: "Reformule une pensée négative",
+      prompts: [
+        "Je ne suis bon·ne à rien",
+        "Tout va mal",
+        "Les autres me jugent",
+        "Je n'y arriverai jamais",
+      ]
+    },
+    {
+      id: 3, title: "Ma météo intérieure", emoji: "🌤️",
+      desc: "Décris ton état en image météo",
+      meteos: ["⛈️ Orage", "🌧️ Pluie", "☁️ Nuageux", "🌤️ Éclaircie", "☀️ Soleil", "🌈 Arc-en-ciel"]
+    },
+  ];
+
+  const [selected, setSelected] = useState(null);
+  const [senseStep, setSenseStep] = useState(0);
+  const [senseInputs, setSenseInputs] = useState([[], [], [], [], []]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [pensee, setPensee] = useState("");
+  const [alternative, setAlternative] = useState("");
+  const [meteo, setMeteo] = useState(null);
+  const [done, setDone] = useState(false);
+
+  const addSenseItem = () => {
+    if (!currentInput.trim()) return;
+    const step = DEFIS[0].steps[senseStep];
+    setSenseInputs(prev => {
+      const next = [...prev];
+      next[senseStep] = [...next[senseStep], currentInput.trim()];
+      return next;
+    });
+    setCurrentInput("");
+    if (senseInputs[senseStep].length + 1 >= step.n) {
+      if (senseStep < 4) setSenseStep(s => s + 1);
+      else { setDone(true); addCoins(15); }
+    }
+  };
+
+  if (done) return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <Card style={{ background: C.pinkPale, border: "none", textAlign: "center", padding: 32 }}>
+        <div style={{ fontSize: 64, marginBottom: 12 }}>🧠</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 8 }}>Excellent !</div>
+        <p style={{ fontSize: 14, color: C.muted, marginBottom: 20 }}>Tu as ancré ton esprit dans le présent. +15 PsychoCoins 🪙</p>
+        <Btn onClick={onBack} color={C.pink} style={{ width: "100%" }}>Retour aux activités</Btn>
+      </Card>
+    </div>
+  );
+
+  if (!selected) return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Défis cognitifs 🧩</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Des exercices doux pour l'esprit</div>
+      {DEFIS.map(d => (
+        <Card key={d.id} onClick={() => setSelected(d)} style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 16, background: C.pinkPale,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>
+            {d.emoji}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: C.text }}>{d.title}</div>
+            <div style={{ fontSize: 13, color: C.muted }}>{d.desc}</div>
+          </div>
+          <span style={{ color: C.purple }}>→</span>
+        </Card>
+      ))}
+    </div>
+  );
+
+  // Exercice 1 : 5-4-3-2-1
+  if (selected.id === 1) {
+    const step = selected.steps[senseStep];
+    return (
+      <div style={{ padding: "20px 16px" }}>
+        <BackBtn onBack={() => setSelected(null)} />
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>5-4-3-2-1 👁️</div>
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Ancrage dans le moment présent</div>
+        <Card style={{ background: C.pinkPale, border: "none", textAlign: "center", padding: 24, marginBottom: 16 }}>
+          <div style={{ fontSize: 48 }}>{step.sense}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginTop: 8 }}>
+            Nomme {step.n - senseInputs[senseStep].length} {step.label}
+          </div>
+        </Card>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {senseInputs[senseStep].map((item, i) => (
+            <span key={i} style={{ background: C.pink, color: "#fff", padding: "4px 12px", borderRadius: 20, fontSize: 13 }}>{item}</span>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input value={currentInput} onChange={e => setCurrentInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && addSenseItem()}
+            placeholder="Tape et appuie sur Entrée..."
+            style={{ flex: 1, padding: "10px 14px", borderRadius: 12, border: `1px solid ${C.border}`,
+              outline: "none", fontSize: 14, background: C.bg }} />
+          <Btn onClick={addSenseItem} color={C.pink} style={{ padding: "10px 18px", margin: 0, borderRadius: 12 }}>+</Btn>
+        </div>
+      </div>
+    );
+  }
+
+  // Exercice 2 : Pensée alternative
+  if (selected.id === 2) {
+    const prompt = selected.prompts[Math.floor(Math.random() * selected.prompts.length)];
+    return (
+      <div style={{ padding: "20px 16px" }}>
+        <BackBtn onBack={() => setSelected(null)} />
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Pensée alternative 💭</div>
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Reformule une pensée difficile</div>
+        <Card style={{ background: "#FEE2E2", border: "none", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: C.muted, marginBottom: 4 }}>Pensée automatique :</div>
+          <div style={{ fontWeight: 700, color: C.text, fontSize: 16 }}>"{pensee || prompt}"</div>
+        </Card>
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>Et si tu la reformulais autrement ?</div>
+          <textarea value={alternative} onChange={e => setAlternative(e.target.value)}
+            placeholder="Une version plus douce, plus nuancée, plus vraie..."
+            style={{ width: "100%", minHeight: 100, padding: 12, borderRadius: 12,
+              border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+              background: C.bg, resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+        </Card>
+        {alternative.length > 5 && (
+          <Btn onClick={() => { setDone(true); addCoins(15); }} color={C.pink} style={{ width: "100%" }}>
+            ✓ Valider ma pensée alternative
+          </Btn>
+        )}
+      </div>
+    );
+  }
+
+  // Exercice 3 : Météo intérieure
+  if (selected.id === 3) {
+    return (
+      <div style={{ padding: "20px 16px" }}>
+        <BackBtn onBack={() => setSelected(null)} />
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Ma météo intérieure 🌤️</div>
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Quel temps fait-il en toi aujourd'hui ?</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {selected.meteos.map(m => (
+            <Card key={m} onClick={() => setMeteo(m)} style={{
+              textAlign: "center", padding: 20, cursor: "pointer",
+              border: meteo === m ? `2px solid ${C.pink}` : `1px solid ${C.border}`,
+              background: meteo === m ? C.pinkPale : C.bgCard,
+            }}>
+              <div style={{ fontSize: 36 }}>{m.split(" ")[0]}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginTop: 6 }}>{m.split(" ").slice(1).join(" ")}</div>
+            </Card>
+          ))}
+        </div>
+        {meteo && (
+          <Btn onClick={() => { setDone(true); addCoins(15); }} color={C.pink} style={{ width: "100%" }}>
+            ✓ C'est ma météo du jour
+          </Btn>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+
+// ─── Communauté ───────────────────────────────────────────────
+const COMMUNITY_POSTS = [
+  { id: 1, user: "Léa", emoji: "🌸", time: "il y a 2h", text: "Aujourd'hui j'ai réussi à sortir faire une courte promenade. C'est tout petit mais pour moi c'est énorme. 💪", likes: 24, comments: 8, liked: false },
+  { id: 2, user: "Thomas", emoji: "🌊", time: "il y a 4h", text: "Nuit difficile. Je me sens épuisé mais je suis là, et c'est déjà ça. Merci à ceux qui comprennent sans juger.", likes: 41, comments: 15, liked: false },
+  { id: 3, user: "Maya", emoji: "🌻", time: "il y a 6h", text: "3 mois que je fais la respiration guidée chaque matin. Je ne guéris pas vite, mais je tiens. Vous aussi vous tenez. 🌬️", likes: 67, comments: 22, liked: false },
+  { id: 4, user: "Nico", emoji: "⭐", time: "hier", text: "Question : est-ce que quelqu'un a des conseils pour parler de son anxiété à sa famille ? C'est tellement dur de trouver les mots.", likes: 19, comments: 31, liked: false },
+  { id: 5, user: "Sonia", emoji: "🎵", time: "hier", text: "La musique m'a sauvée aujourd'hui. Un morceau, les yeux fermés, 5 minutes. Parfois c'est tout ce qu'il faut.", likes: 38, comments: 7, liked: false },
+];
+
+function CommunauteScreen({ onBack }) {
+  const [posts, setPosts] = useState(COMMUNITY_POSTS);
+  const [newPost, setNewPost] = useState("");
+  const [showWrite, setShowWrite] = useState(false);
+  const [tab, setTab] = useState("fil");
+
+  const toggleLike = (id) => {
+    setPosts(prev => prev.map(p => p.id === id
+      ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
+      : p
+    ));
+  };
+
+  const publish = () => {
+    if (!newPost.trim()) return;
+    setPosts(prev => [{
+      id: Date.now(), user: "Moi", emoji: "🌸", time: "à l'instant",
+      text: newPost, likes: 0, comments: 0, liked: false
+    }, ...prev]);
+    setNewPost("");
+    setShowWrite(false);
+  };
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Communauté 👥</div>
+        <button onClick={() => setShowWrite(!showWrite)} style={{
+          background: C.purple, color: "#fff", border: "none", borderRadius: 20,
+          padding: "8px 16px", fontWeight: 700, fontSize: 13, cursor: "pointer"
+        }}>✏️ Écrire</button>
+      </div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Un espace bienveillant et sécurisé</div>
+
+      <Card style={{ background: "#FFF8E1", border: `1px solid ${C.yellow}88`, marginBottom: 16 }}>
+        <p style={{ margin: 0, fontSize: 13, color: "#795548" }}>
+          🤝 Cet espace est anonyme et modéré. Pas de jugement, pas de conseils non demandés. Juste de la présence.
+        </p>
+      </Card>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {[{id:"fil",label:"📰 Fil"},{id:"groupes",label:"👥 Groupes"},{id:"amis",label:"💜 Amis"}].map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: "7px 14px", borderRadius: 20, border: "none", fontSize: 12,
+            fontWeight: 700, cursor: "pointer",
+            background: tab === t.id ? C.purple : C.border,
+            color: tab === t.id ? "#fff" : C.muted,
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Write zone */}
+      {showWrite && (
+        <Card style={{ marginBottom: 16, background: C.purplePale, border: "none" }}>
+          <textarea value={newPost} onChange={e => setNewPost(e.target.value)}
+            placeholder="Partage ce que tu vis, anonymement et sans jugement..."
+            style={{ width: "100%", minHeight: 100, padding: 12, borderRadius: 12,
+              border: `1px solid ${C.border}`, outline: "none", fontSize: 14,
+              background: "#fff", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+            <Btn onClick={publish} color={C.purple} small>Publier 💜</Btn>
+          </div>
+        </Card>
+      )}
+
+      {tab === "fil" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {posts.map(p => (
+            <Card key={p.id} style={{ padding: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: "50%", background: C.purplePale,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                  {p.emoji}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{p.user}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{p.time}</div>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 12px", fontSize: 14, color: C.text, lineHeight: 1.7 }}>{p.text}</p>
+              <div style={{ display: "flex", gap: 16 }}>
+                <button onClick={() => toggleLike(p.id)} style={{
+                  background: "none", border: "none", cursor: "pointer",
+                  color: p.liked ? C.pink : C.muted, fontSize: 13, fontWeight: 600,
+                  display: "flex", alignItems: "center", gap: 4
+                }}>
+                  {p.liked ? "💜" : "🤍"} {p.likes}
+                </button>
+                <button style={{ background: "none", border: "none", cursor: "pointer",
+                  color: C.muted, fontSize: 13, fontWeight: 600,
+                  display: "flex", alignItems: "center", gap: 4 }}>
+                  💬 {p.comments}
+                </button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab === "groupes" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[
+            { emoji: "😔", name: "Dépression", members: 1243, desc: "Soutien mutuel pour ceux qui traversent une dépression" },
+            { emoji: "😰", name: "Anxiété", members: 2891, desc: "Partage et conseils pour gérer l'anxiété au quotidien" },
+            { emoji: "🌊", name: "Trouble bipolaire", members: 567, desc: "Espace d'échange pour les personnes bipolaires et leurs proches" },
+            { emoji: "🤝", name: "Proches aidants", members: 891, desc: "Pour ceux qui accompagnent un proche en souffrance" },
+            { emoji: "🌱", name: "Rétablissement", members: 432, desc: "Célébrer les petites victoires ensemble" },
+          ].map((g, i) => (
+            <Card key={i} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 16, background: C.purplePale,
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, flexShrink: 0 }}>
+                {g.emoji}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: C.text }}>{g.name}</div>
+                <div style={{ fontSize: 12, color: C.muted }}>{g.members.toLocaleString()} membres</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{g.desc}</div>
+              </div>
+              <Btn small color={C.purple} style={{ padding: "6px 12px", flexShrink: 0 }}>Rejoindre</Btn>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {tab === "amis" && (
+        <Card style={{ textAlign: "center", padding: 40, background: C.purplePale, border: "none" }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>💜</div>
+          <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>Tes connexions</div>
+          <p style={{ fontSize: 14, color: C.muted, margin: "0 0 20px" }}>
+            Connecte-toi avec des personnes qui comprennent ce que tu traverses.
+          </p>
+          <Btn color={C.purple} style={{ width: "100%" }}>Trouver des connexions</Btn>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── Suivi d'humeur ───────────────────────────────────────────
+const HUMEUR_DATA = [
+  { jour: "Lun", score: 3, emoji: "😐" },
+  { jour: "Mar", score: 4, emoji: "🙂" },
+  { jour: "Mer", score: 2, emoji: "😔" },
+  { jour: "Jeu", score: 4, emoji: "🙂" },
+  { jour: "Ven", score: 5, emoji: "😊" },
+  { jour: "Sam", score: 3, emoji: "😐" },
+  { jour: "Dim", score: null, emoji: "?" },
+];
+
+function SuiviHumeurScreen({ onBack }) {
+  const [data, setData] = useState(HUMEUR_DATA);
+  const [selected, setSelected] = useState(null);
+  const [periode, setPeriode] = useState("semaine");
+
+  const HUMEURS = [
+    { score: 1, emoji: "😣", label: "Très mal" },
+    { score: 2, emoji: "😔", label: "Pas bien" },
+    { score: 3, emoji: "😐", label: "Neutre" },
+    { score: 4, emoji: "🙂", label: "Bien" },
+    { score: 5, emoji: "😊", label: "Très bien" },
+  ];
+
+  const logToday = (score) => {
+    setData(prev => prev.map((d, i) => i === prev.length - 1 ? { ...d, score, emoji: HUMEURS[score-1].emoji } : d));
+    setSelected(score);
+  };
+
+  const maxScore = 5;
+  const hasToday = data[data.length - 1].score !== null;
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Suivi d'humeur 📊</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Observe tes émotions dans le temps</div>
+
+      {/* Today's log */}
+      {!hasToday && (
+        <Card style={{ marginBottom: 20, background: C.purplePale, border: "none" }}>
+          <div style={{ fontWeight: 700, color: C.text, marginBottom: 12 }}>Comment tu vas aujourd'hui ?</div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {HUMEURS.map(h => (
+              <button key={h.score} onClick={() => logToday(h.score)} style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                background: selected === h.score ? C.purple : "transparent",
+                border: "none", borderRadius: 12, padding: "8px 4px", cursor: "pointer",
+                flex: 1,
+              }}>
+                <span style={{ fontSize: 28 }}>{h.emoji}</span>
+                <span style={{ fontSize: 10, color: selected === h.score ? "#fff" : C.muted, fontWeight: 600 }}>
+                  {h.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {hasToday && (
+        <Card style={{ marginBottom: 20, background: C.greenPale, border: "none", textAlign: "center", padding: 16 }}>
+          <div style={{ fontSize: 32 }}>{data[data.length-1].emoji}</div>
+          <div style={{ fontWeight: 700, color: C.text, marginTop: 4 }}>Humeur du jour enregistrée ✓</div>
+        </Card>
+      )}
+
+      {/* Période */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        {["semaine", "mois"].map(p => (
+          <button key={p} onClick={() => setPeriode(p)} style={{
+            padding: "7px 16px", borderRadius: 20, border: "none", fontWeight: 700,
+            fontSize: 12, cursor: "pointer", textTransform: "capitalize",
+            background: periode === p ? C.purple : C.border,
+            color: periode === p ? "#fff" : C.muted,
+          }}>{p === "semaine" ? "Cette semaine" : "Ce mois"}</button>
+        ))}
+      </div>
+
+      {/* Graph */}
+      <Card style={{ marginBottom: 16, padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", height: 120, marginBottom: 8 }}>
+          {data.map((d, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, flex: 1 }}>
+              {d.score !== null ? (
+                <div style={{
+                  width: "70%", borderRadius: "6px 6px 0 0",
+                  height: `${(d.score / maxScore) * 100}px`,
+                  background: d.score >= 4 ? C.green : d.score === 3 ? C.yellow : C.pink,
+                  transition: "height 0.5s ease",
+                  display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 4
+                }}>
+                  <span style={{ fontSize: 12 }}>{d.emoji}</span>
+                </div>
+              ) : (
+                <div style={{ width: "70%", height: 20, borderRadius: 6,
+                  background: C.border, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontSize: 10, color: C.muted }}>?</span>
+                </div>
+              )}
+              <span style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>{d.jour}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+        {[
+          { label: "Moyenne", val: (data.filter(d=>d.score).reduce((a,b)=>a+b.score,0)/data.filter(d=>d.score).length).toFixed(1), emoji: "📊" },
+          { label: "Meilleur", val: Math.max(...data.filter(d=>d.score).map(d=>d.score)), emoji: "⬆️" },
+          { label: "Jours notés", val: data.filter(d=>d.score).length + "/7", emoji: "📅" },
+        ].map((s, i) => (
+          <Card key={i} style={{ textAlign: "center", padding: 12 }}>
+            <div style={{ fontSize: 20 }}>{s.emoji}</div>
+            <div style={{ fontWeight: 800, color: C.purple, fontSize: 18 }}>{s.val}</div>
+            <div style={{ fontSize: 11, color: C.muted }}>{s.label}</div>
+          </Card>
+        ))}
+      </div>
+
+      <Card style={{ background: C.purplePale, border: "none" }}>
+        <p style={{ margin: 0, fontSize: 13, color: C.text, lineHeight: 1.7 }}>
+          💡 Le suivi d'humeur t'aide à repérer des patterns. Tu peux partager ce graphique avec ton soignant si tu le souhaites.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Carte des urgences ───────────────────────────────────────
+const URGENCES_DATA = [
+  { nom: "3114 — Numéro national prévention suicide", type: "Urgence nationale", tel: "3114", ouvert: "24h/24 · Gratuit · Confidentiel", color: "#E05A5A", bg: "#FEE2E2", emoji: "🆘" },
+  { nom: "SAMU", type: "Urgence médicale", tel: "15", ouvert: "24h/24", color: "#E05A5A", bg: "#FEE2E2", emoji: "🚑" },
+  { nom: "CHU Pitié-Salpêtrière — Urgences Psy", type: "Hôpital", tel: "01 42 16 00 00", ouvert: "24h/24", color: C.purple, bg: C.purplePale, emoji: "🏥", ville: "Paris 13e" },
+  { nom: "CMP Paris 11e", type: "Centre médico-psychologique", tel: "01 43 67 12 34", ouvert: "Lun-Ven 9h-17h", color: C.green, bg: C.greenPale, emoji: "🏡", ville: "Paris 11e" },
+  { nom: "Clinique des Lilas", type: "Clinique psychiatrique", tel: "01 49 72 72 00", ouvert: "24h/24", color: C.orange, bg: C.orangePale, emoji: "🏥", ville: "Les Lilas (93)" },
+  { nom: "SOS Amitié", type: "Écoute téléphonique", tel: "09 72 39 40 50", ouvert: "24h/24", color: C.pink, bg: C.pinkPale, emoji: "💬" },
+  { nom: "Fil Santé Jeunes", type: "Écoute 12-25 ans", tel: "0800 235 236", ouvert: "8h-minuit · Gratuit", color: C.green, bg: C.greenPale, emoji: "🌱" },
+];
+
+function UrgencesScreen({ onBack }) {
+  const [search, setSearch] = useState("");
+  const [filtre, setFiltre] = useState("tous");
+
+  const filtres = ["tous", "urgence", "hôpital", "écoute"];
+
+  const filtered = URGENCES_DATA.filter(u => {
+    const matchSearch = u.nom.toLowerCase().includes(search.toLowerCase());
+    const matchFiltre = filtre === "tous" ||
+      (filtre === "urgence" && u.type.toLowerCase().includes("urgence")) ||
+      (filtre === "hôpital" && (u.type.toLowerCase().includes("hôpital") || u.type.toLowerCase().includes("clinique"))) ||
+      (filtre === "écoute" && u.type.toLowerCase().includes("écoute"));
+    return matchSearch && matchFiltre;
+  });
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Urgences 🏥</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Contacts et structures disponibles</div>
+
+      {/* 3114 en évidence */}
+      <Card style={{ background: "#FEE2E2", border: "2px solid #E05A5A", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 36 }}>🆘</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, color: "#E05A5A", fontSize: 18 }}>3114</div>
+            <div style={{ fontSize: 14, color: C.text }}>Numéro national prévention suicide</div>
+            <div style={{ fontSize: 12, color: C.muted }}>Gratuit · 24h/24 · 7j/7 · Confidentiel</div>
+          </div>
+          <a href="tel:3114" style={{ textDecoration: "none" }}>
+            <Btn color="#E05A5A" small>📞 Appeler</Btn>
+          </a>
+        </div>
+      </Card>
+
+      {/* Recherche */}
+      <input value={search} onChange={e => setSearch(e.target.value)}
+        placeholder="🔍 Rechercher..."
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: `1px solid ${C.border}`,
+          outline: "none", fontSize: 14, background: C.bg, marginBottom: 12, boxSizing: "border-box" }} />
+
+      {/* Filtres */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {filtres.map(f => (
+          <button key={f} onClick={() => setFiltre(f)} style={{
+            padding: "6px 14px", borderRadius: 20, border: "none", fontWeight: 700,
+            fontSize: 12, cursor: "pointer", textTransform: "capitalize",
+            background: filtre === f ? C.purple : C.border,
+            color: filtre === f ? "#fff" : C.muted,
+          }}>{f}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {filtered.map((u, i) => (
+          <Card key={i} style={{ background: u.bg, border: `1px solid ${u.color}33` }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <span style={{ fontSize: 28, flexShrink: 0 }}>{u.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: C.text, fontSize: 14 }}>{u.nom}</div>
+                <div style={{ fontSize: 12, color: u.color, fontWeight: 600, marginTop: 2 }}>{u.type}</div>
+                {u.ville && <div style={{ fontSize: 12, color: C.muted }}>📍 {u.ville}</div>}
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>⏰ {u.ouvert}</div>
+              </div>
+              <a href={"tel:" + u.tel} style={{ textDecoration: "none", flexShrink: 0 }}>
+                <div style={{ background: u.color, color: "#fff", borderRadius: 12,
+                  padding: "6px 12px", fontSize: 12, fontWeight: 700 }}>
+                  📞 {u.tel}
+                </div>
+              </a>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Rappels ─────────────────────────────────────────────────
+function RappelsScreen({ onBack }) {
+  const [rappels, setRappels] = useState([
+    { id: 1, label: "Quête du matin", heure: "09:00", actif: true, emoji: "🌅" },
+    { id: 2, label: "Exercice de respiration", heure: "12:30", actif: false, emoji: "🌬️" },
+    { id: 3, label: "Journal des émotions", heure: "20:00", actif: true, emoji: "📓" },
+    { id: 4, label: "Gratitude du soir", heure: "21:30", actif: false, emoji: "🌟" },
+  ]);
+
+  const toggle = (id) => setRappels(prev => prev.map(r => r.id === id ? { ...r, actif: !r.actif } : r));
+
+  return (
+    <div style={{ padding: "20px 16px" }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Rappels 🔔</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Des rappels doux, sans pression</div>
+
+      <Card style={{ background: C.purplePale, border: "none", marginBottom: 20 }}>
+        <p style={{ margin: 0, fontSize: 14, color: C.text, lineHeight: 1.7 }}>
+          💜 Les rappels sont là pour toi, pas contre toi. Tu peux les ignorer sans te sentir coupable.
+        </p>
+      </Card>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+        {rappels.map(r => (
+          <Card key={r.id} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ fontSize: 28 }}>{r.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, color: C.text }}>{r.label}</div>
+              <div style={{ fontSize: 13, color: C.muted }}>🕐 {r.heure}</div>
+            </div>
+            <button onClick={() => toggle(r.id)} style={{
+              width: 50, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
+              background: r.actif ? C.purple : C.border,
+              transition: "background 0.2s", position: "relative",
+              display: "flex", alignItems: "center", padding: "0 3px",
+              justifyContent: r.actif ? "flex-end" : "flex-start",
+            }}>
+              <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#fff",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.2)", transition: "all 0.2s" }} />
+            </button>
+          </Card>
+        ))}
+      </div>
+
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C.text, marginBottom: 12 }}>➕ Ajouter un rappel</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input placeholder="Ex : Méditation du soir"
+            style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid ${C.border}`,
+              outline: "none", fontSize: 14, background: C.bg }} />
+          <input type="time" defaultValue="08:00"
+            style={{ padding: "10px 14px", borderRadius: 12, border: `1px solid ${C.border}`,
+              outline: "none", fontSize: 14, background: C.bg }} />
+          <Btn color={C.purple} style={{ width: "100%" }}>Ajouter</Btn>
+        </div>
+      </Card>
+
+      <Card style={{ background: "#FFF8E1", border: `1px solid ${C.yellow}88` }}>
+        <p style={{ margin: 0, fontSize: 13, color: "#795548" }}>
+          ℹ️ Les rappels nécessitent d'activer les notifications dans les paramètres de ton téléphone.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 function ChatScreen({ onBack, setScreen, setChatContact }) {
   return (
     <div style={{ padding: "20px 16px" }}>
@@ -485,7 +1334,7 @@ function ChatScreen({ onBack, setScreen, setChatContact }) {
       </Card>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {CONTACTS.map(c => (
-          <Card key={c.id} onClick={() => { setChatContact(c); setScreen(S.CHAT_ROOM); }} style={{ display: "flex", alignItems: "center", gap: 14, opacity: c.available ? 1 : 0.5 }}>
+          <Card key={c.id} onClick={() => { if(c.available){ setChatContact(c); setScreen(S.CHAT_ROOM); } }} style={{ display: "flex", alignItems: "center", gap: 14, opacity: c.available ? 1 : 0.5, cursor: c.available ? "pointer" : "default" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: c.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 18, flexShrink: 0 }}>
               {c.name[0]}
             </div>
@@ -508,16 +1357,39 @@ function ChatScreen({ onBack, setScreen, setChatContact }) {
   );
 }
 
-function ChatRoomScreen({ onBack, contact }) {
-  const [msgs, setMsgs] = useState([{ from: "them", text: `Bonjour, je suis ${contact.name}. Comment puis-je vous aider aujourd'hui ?` }]);
+function ChatRoomScreen({ onBack, contact, user }) {
+  const [msgs, setMsgs] = useState([{ from: "them", text: "Bonjour, je suis " + contact.name + ". Comment puis-je vous aider aujourd'hui ?", time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) }]);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
   const endRef = useRef(null);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
-  const send = () => {
-    if (!input.trim()) return;
-    setMsgs(m => [...m, { from: "me", text: input }]);
+
+  const send = async () => {
+    if (!input.trim() || sending) return;
+    const text = input.trim();
     setInput("");
-    setTimeout(() => setMsgs(m => [...m, { from: "them", text: "Merci de partager ça avec moi. Je vous écoute. Pouvez-vous m'en dire un peu plus ?" }]), 1500);
+    setSending(true);
+    const newMsg = { from: "me", text, time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) };
+    setMsgs(m => [...m, newMsg]);
+    try {
+      if (user?.token) {
+        await supabase.sendMessage({
+          sender_id: user.id,
+          receiver_id: contact.id || contact.name,
+          content: text,
+          created_at: new Date().toISOString()
+        }, user.token);
+      }
+    } catch(e) { console.log("Message saved locally only"); }
+    setSending(false);
+    setTimeout(() => {
+      setMsgs(m => [...m, {
+        from: "them",
+        text: "Merci de partager ça avec moi. Je vous écoute. Pouvez-vous m'en dire un peu plus ?",
+        time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+      }]);
+    }, 1500);
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg }}>
@@ -534,6 +1406,7 @@ function ChatRoomScreen({ onBack, contact }) {
           <div key={i} style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start" }}>
             <div style={{ maxWidth: "78%", padding: "10px 14px", borderRadius: m.from === "me" ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: m.from === "me" ? C.purple : C.bgCard, color: m.from === "me" ? "#fff" : C.text, fontSize: 14, border: m.from !== "me" ? `1px solid ${C.border}` : "none" }}>
               {m.text}
+              {m.time && <div style={{fontSize:10, opacity:0.6, marginTop:4, textAlign:"right"}}>{m.time}</div>}
             </div>
           </div>
         ))}
@@ -701,7 +1574,7 @@ function FicheScreen({ onBack, fiche }) {
   );
 }
 
-function ProfileScreen({ onBack, coins, quests, avatar, mode, setMode }) {
+function ProfileScreen({ onBack, coins, quests, mode, setMode, user, onLogout }) {
   const done = quests.filter(q => q.done).length;
   const modes = ["Mode libre", "Mode accompagné", "Mode engagement"];
   return (
@@ -709,10 +1582,7 @@ function ProfileScreen({ onBack, coins, quests, avatar, mode, setMode }) {
       <BackBtn onBack={onBack} />
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 20 }}>Mon profil</div>
       <Card style={{ textAlign: "center", padding: 24, marginBottom: 16, background: `linear-gradient(135deg, ${C.purplePale}, ${C.greenPale})`, border: "none" }}>
-        <div style={{ width: 80, height: 80, borderRadius: "50%", background: avatar.color, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>
-          {avatar.top}
-        </div>
-        <div style={{ fontSize: 24, marginTop: 4 }}>{avatar.acc}</div>
+        <div style={{ fontSize: 64 }}>🌸</div>
         <div style={{ fontWeight: 800, color: C.text, marginTop: 8, fontSize: 18 }}>🪙 {coins} PsychoCoins</div>
         <div style={{ color: C.muted, fontSize: 13 }}>{done} quêtes complétées aujourd'hui</div>
       </Card>
@@ -742,15 +1612,422 @@ function ProfileScreen({ onBack, coins, quests, avatar, mode, setMode }) {
 }
 
 // ─── Main App ─────────────────────────────────────────────────
-export default function MentalBloom() {
+
+// ─── Système d'authentification ──────────────────────────────
+
+function SplashScreen({ onFinish }) {
+  useEffect(() => {
+    const timer = setTimeout(onFinish, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <div style={{ fontSize: 72, marginBottom: 16 }}>🌸</div>
+      <div style={{ fontSize: 32, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>MentalBloom</div>
+      <div style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 8 }}>Un espace pour toi, à ton rythme</div>
+      <div style={{ marginTop: 48, display: "flex", gap: 8 }}>
+        {[0,1,2].map(i => (
+          <div key={i} style={{ width: 8, height: 8, borderRadius: "50%",
+            background: i === 0 ? "#fff" : "rgba(255,255,255,0.4)",
+            animation: "pulse 1.5s infinite" }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OnboardingScreen({ onFinish }) {
+  const [step, setStep] = useState(0);
+
+  const slides = [
+    {
+      emoji: "🌸",
+      title: "Bienvenue sur MentalBloom",
+      desc: "Un espace bienveillant pour prendre soin de ta santé mentale, à ton propre rythme.",
+      bg: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
+    },
+    {
+      emoji: "🎮",
+      title: "Des activités pour aller mieux",
+      desc: "Respiration, journal des émotions, gratitude... Des exercices conçus avec des professionnels.",
+      bg: `linear-gradient(135deg, ${C.green}, #5AA882)`,
+    },
+    {
+      emoji: "💬",
+      title: "Tu n'es pas seul·e",
+      desc: "Parle à des soignants, des pair-aidants, rejoins une communauté qui comprend ce que tu traverses.",
+      bg: `linear-gradient(135deg, ${C.orange}, #E07D3F)`,
+    },
+    {
+      emoji: "💜",
+      title: "Aucun jugement, aucune pression",
+      desc: "MentalBloom ne récompense pas la performance. Il valorise ta présence et tes petits pas.",
+      bg: `linear-gradient(135deg, ${C.pink}, #D06090)`,
+    },
+  ];
+
+  const slide = slides[step];
+  const isLast = step === slides.length - 1;
+
+  return (
+    <div style={{ minHeight: "100vh", background: slide.bg, display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "space-between", padding: "60px 32px 48px",
+      fontFamily: "'Inter', system-ui, sans-serif", transition: "background 0.5s" }}>
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+        <div style={{ fontSize: 80, marginBottom: 24 }}>{slide.emoji}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 16, lineHeight: 1.3 }}>{slide.title}</div>
+        <div style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.8, maxWidth: 320 }}>{slide.desc}</div>
+      </div>
+
+      <div style={{ width: "100%" }}>
+        {/* Dots */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 32 }}>
+          {slides.map((_, i) => (
+            <div key={i} style={{ width: i === step ? 24 : 8, height: 8, borderRadius: 4,
+              background: i === step ? "#fff" : "rgba(255,255,255,0.4)",
+              transition: "all 0.3s" }} />
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 12 }}>
+          {!isLast && (
+            <button onClick={onFinish} style={{ flex: 1, padding: 14, borderRadius: 50,
+              background: "rgba(255,255,255,0.2)", color: "#fff", border: "none",
+              fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              Passer
+            </button>
+          )}
+          <button onClick={() => isLast ? onFinish() : setStep(s => s + 1)}
+            style={{ flex: 2, padding: 14, borderRadius: 50,
+              background: "#fff", color: C.purple, border: "none",
+              fontWeight: 800, fontSize: 15, cursor: "pointer",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+            {isLast ? "Commencer 🌸" : "Suivant →"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onLogin, onGoRegister }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Remplis tous les champs.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const data = await supabase.signIn(email.trim(), password);
+      if (data.error) {
+        setError("Email ou mot de passe incorrect.");
+        setLoading(false);
+        return;
+      }
+      const user = {
+        id: data.user.id,
+        email: data.user.email,
+        prenom: data.user.user_metadata?.prenom || "Utilisateur",
+        profil: data.user.user_metadata?.profil || "souffrance",
+        mode: data.user.user_metadata?.mode || "Mode libre",
+        token: data.access_token,
+        coins: 45,
+      };
+      setLoading(false);
+      onLogin(user);
+    } catch(e) {
+      setError("Erreur de connexion. Vérifie ta connexion internet.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter', system-ui, sans-serif",
+      display: "flex", flexDirection: "column", maxWidth: 430, margin: "0 auto" }}>
+
+      <div style={{ background: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
+        padding: "48px 32px 32px", textAlign: "center" }}>
+        <div style={{ fontSize: 48, marginBottom: 8 }}>🌸</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: "#fff" }}>Bon retour !</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>Connecte-toi à ton espace</div>
+      </div>
+
+      <div style={{ padding: "32px 24px", flex: 1 }}>
+        {error && (
+          <div style={{ background: "#FEE2E2", border: "1px solid #E05A5A33", borderRadius: 12,
+            padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#E05A5A", fontWeight: 600 }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 6 }}>
+            Adresse email
+          </label>
+          <input value={email} onChange={e => setEmail(e.target.value)}
+            type="email" placeholder="ton@email.com"
+            style={{ width: "100%", padding: "12px 16px", borderRadius: 14, fontSize: 15,
+              border: `1px solid ${C.border}`, outline: "none", background: "#fff",
+              boxSizing: "border-box", fontFamily: "inherit" }} />
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 6 }}>
+            Mot de passe
+          </label>
+          <div style={{ position: "relative" }}>
+            <input value={password} onChange={e => setPassword(e.target.value)}
+              type={showPass ? "text" : "password"} placeholder="••••••••"
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+              style={{ width: "100%", padding: "12px 48px 12px 16px", borderRadius: 14, fontSize: 15,
+                border: `1px solid ${C.border}`, outline: "none", background: "#fff",
+                boxSizing: "border-box", fontFamily: "inherit" }} />
+            <button onClick={() => setShowPass(s => !s)}
+              style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer", fontSize: 18 }}>
+              {showPass ? "🙈" : "👁️"}
+            </button>
+          </div>
+        </div>
+
+        <button onClick={handleLogin} disabled={loading}
+          style={{ width: "100%", padding: 14, borderRadius: 50, background: loading ? C.muted : C.purple,
+            color: "#fff", border: "none", fontWeight: 800, fontSize: 16, cursor: loading ? "default" : "pointer",
+            boxShadow: loading ? "none" : `0 4px 20px ${C.purple}44`, marginBottom: 16 }}>
+          {loading ? "Connexion..." : "Se connecter 🌸"}
+        </button>
+
+        <div style={{ textAlign: "center", fontSize: 14, color: C.muted, marginBottom: 24 }}>
+          Mot de passe oublié ?{" "}
+          <span style={{ color: C.purple, fontWeight: 700, cursor: "pointer" }}>Réinitialiser</span>
+        </div>
+
+        <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24, textAlign: "center" }}>
+          <div style={{ fontSize: 14, color: C.muted, marginBottom: 12 }}>Pas encore de compte ?</div>
+          <button onClick={onGoRegister}
+            style={{ width: "100%", padding: 14, borderRadius: 50, background: "transparent",
+              color: C.purple, border: `2px solid ${C.purple}`, fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+            Créer un compte
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegisterScreen({ onRegister, onGoLogin }) {
+  const [step, setStep] = useState(1);
+  const [prenom, setPrenom] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [profil, setProfil] = useState(null);
+  const [mode, setMode] = useState("Mode libre");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const PROFILS = [
+    { id: "souffrance", emoji: "🌱", label: "Je vis avec des troubles mentaux", desc: "Je cherche du soutien et des ressources" },
+    { id: "proche", emoji: "🤝", label: "Je suis proche/aidant·e", desc: "J'accompagne quelqu'un en souffrance" },
+    { id: "curieux", emoji: "📚", label: "Je m'informe", desc: "Je veux mieux comprendre la santé mentale" },
+  ];
+
+  const MODES = [
+    { id: "Mode libre", label: "Mode libre", desc: "Aucune preuve demandée, à ton rythme total" },
+    { id: "Mode accompagné", label: "Mode accompagné", desc: "Rappels doux et plus de présence" },
+    { id: "Mode engagement", label: "Mode engagement", desc: "Objectifs et validation de quêtes par photo" },
+  ];
+
+  const nextStep = () => {
+    setError("");
+    if (step === 1) {
+      if (!prenom.trim()) { setError("Entre ton prénom."); return; }
+      if (!email.trim() || !email.includes("@")) { setError("Email invalide."); return; }
+      if (password.length < 6) { setError("Mot de passe trop court (6 caractères min)."); return; }
+      if (password !== confirmPass) { setError("Les mots de passe ne correspondent pas."); return; }
+      setStep(2);
+    } else if (step === 2) {
+      if (!profil) { setError("Choisis un profil."); return; }
+      setStep(3);
+    }
+  };
+
+  const handleRegister = async () => {
+    setLoading(true);
+    try {
+      const data = await supabase.signUp(email.trim(), password, { prenom, profil, mode });
+      if (data.error) {
+        setError(data.error.message === "User already registered"
+          ? "Cet email est déjà utilisé."
+          : "Erreur lors de la création du compte.");
+        setLoading(false);
+        return;
+      }
+      const user = {
+        id: data.user?.id,
+        email: email.toLowerCase(),
+        prenom, profil, mode,
+        token: data.session?.access_token,
+        coins: 0,
+      };
+      setLoading(false);
+      onRegister(user);
+    } catch(e) {
+      setError("Erreur de connexion. Vérifie ta connexion internet.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter', system-ui, sans-serif",
+      maxWidth: 430, margin: "0 auto", display: "flex", flexDirection: "column" }}>
+
+      {/* Header */}
+      <div style={{ background: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
+        padding: "40px 24px 24px" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 2,
+              background: i <= step ? "#fff" : "rgba(255,255,255,0.3)",
+              transition: "background 0.3s" }} />
+          ))}
+        </div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)" }}>Étape {step}/3</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginTop: 4 }}>
+          {step === 1 ? "Créer ton compte" : step === 2 ? "Ton profil" : "Ton mode"}
+        </div>
+      </div>
+
+      <div style={{ padding: "24px", flex: 1 }}>
+        {error && (
+          <div style={{ background: "#FEE2E2", borderRadius: 12, padding: "10px 14px",
+            marginBottom: 16, fontSize: 13, color: "#E05A5A", fontWeight: 600 }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Étape 1 : Infos */}
+        {step === 1 && (
+          <>
+            {[
+              { label: "Ton prénom", val: prenom, set: setPrenom, placeholder: "Comment t'appelle-t-on ?", type: "text" },
+              { label: "Email", val: email, set: setEmail, placeholder: "ton@email.com", type: "email" },
+            ].map(f => (
+              <div key={f.label} style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 6 }}>{f.label}</label>
+                <input value={f.val} onChange={e => f.set(e.target.value)} type={f.type}
+                  placeholder={f.placeholder}
+                  style={{ width: "100%", padding: "12px 16px", borderRadius: 14, fontSize: 15,
+                    border: `1px solid ${C.border}`, outline: "none", background: "#fff",
+                    boxSizing: "border-box", fontFamily: "inherit" }} />
+              </div>
+            ))}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 6 }}>Mot de passe</label>
+              <div style={{ position: "relative" }}>
+                <input value={password} onChange={e => setPassword(e.target.value)}
+                  type={showPass ? "text" : "password"} placeholder="6 caractères minimum"
+                  style={{ width: "100%", padding: "12px 48px 12px 16px", borderRadius: 14, fontSize: 15,
+                    border: `1px solid ${C.border}`, outline: "none", background: "#fff",
+                    boxSizing: "border-box", fontFamily: "inherit" }} />
+                <button onClick={() => setShowPass(s => !s)}
+                  style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                    background: "none", border: "none", cursor: "pointer", fontSize: 18 }}>
+                  {showPass ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 6 }}>Confirme ton mot de passe</label>
+              <input value={confirmPass} onChange={e => setConfirmPass(e.target.value)}
+                type="password" placeholder="••••••••"
+                style={{ width: "100%", padding: "12px 16px", borderRadius: 14, fontSize: 15,
+                  border: `1px solid ${C.border}`, outline: "none", background: "#fff",
+                  boxSizing: "border-box", fontFamily: "inherit" }} />
+            </div>
+          </>
+        )}
+
+        {/* Étape 2 : Profil */}
+        {step === 2 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+            <div style={{ fontSize: 14, color: C.muted, marginBottom: 4 }}>Ces infos nous aident à personnaliser ton expérience.</div>
+            {PROFILS.map(p => (
+              <button key={p.id} onClick={() => setProfil(p.id)}
+                style={{ padding: 16, borderRadius: 16, border: profil === p.id ? `2px solid ${C.purple}` : `2px solid ${C.border}`,
+                  background: profil === p.id ? C.purplePale : "#fff", cursor: "pointer", textAlign: "left" }}>
+                <div style={{ fontSize: 28, marginBottom: 6 }}>{p.emoji}</div>
+                <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{p.label}</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{p.desc}</div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Étape 3 : Mode */}
+        {step === 3 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+            <div style={{ fontSize: 14, color: C.muted, marginBottom: 4 }}>Tu peux changer ce choix à tout moment dans ton profil.</div>
+            {MODES.map(m => (
+              <button key={m.id} onClick={() => setMode(m.id)}
+                style={{ padding: 16, borderRadius: 16, border: mode === m.id ? `2px solid ${C.purple}` : `2px solid ${C.border}`,
+                  background: mode === m.id ? C.purplePale : "#fff", cursor: "pointer", textAlign: "left" }}>
+                <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{m.label}</div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {step < 3 ? (
+          <button onClick={nextStep}
+            style={{ width: "100%", padding: 14, borderRadius: 50, background: C.purple,
+              color: "#fff", border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer",
+              boxShadow: `0 4px 20px ${C.purple}44`, marginBottom: 16 }}>
+            Continuer →
+          </button>
+        ) : (
+          <button onClick={handleRegister} disabled={loading}
+            style={{ width: "100%", padding: 14, borderRadius: 50,
+              background: loading ? C.muted : C.purple, color: "#fff", border: "none",
+              fontWeight: 800, fontSize: 16, cursor: loading ? "default" : "pointer",
+              boxShadow: loading ? "none" : `0 4px 20px ${C.purple}44`, marginBottom: 16 }}>
+            {loading ? "Création..." : "Créer mon compte 🌸"}
+          </button>
+        )}
+
+        {step === 1 && (
+          <div style={{ textAlign: "center", fontSize: 14, color: C.muted }}>
+            Déjà un compte ?{" "}
+            <span onClick={onGoLogin} style={{ color: C.purple, fontWeight: 700, cursor: "pointer" }}>
+              Se connecter
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MentalBloom({ user, onLogout }) {
   const [screen, setScreen] = useState(S.HOME);
   const [chatContact, setChatContact] = useState(null);
   const [fiche, setFiche] = useState(null);
-  const [coins, setCoins] = useState(45);
+  const [coins, setCoins] = useState(user.coins || 45);
   const [quests, setQuests] = useState(QUESTS);
-  const [house, setHouse] = useState(["plant"]);
-  const [avatar, setAvatar] = useState({ color: AVATAR_COLORS[0], top: AVATAR_TOPS[0], acc: AVATAR_ACCS[0] });
-  const [mode, setMode] = useState("Mode libre");
+  const [mode, setMode] = useState(user.mode || "Mode libre");
 
   const addCoins = (n) => setCoins(c => c + n);
   const spendCoins = (n) => setCoins(c => Math.max(0, c - n));
@@ -769,29 +2046,4 @@ export default function MentalBloom() {
   const mainScreens = [S.HOME, S.QUESTS, S.CHAT, S.RESOURCES];
 
   return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 430, margin: "0 auto", display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 72 }}>
-        {screen === S.HOME && <HomeScreen setScreen={setScreen} quests={quests} coins={coins} avatar={avatar} />}
-        {screen === S.QUESTS && <QuestsScreen onBack={() => setScreen(S.HOME)} quests={quests} setQuests={setQuests} addCoins={addCoins} mode={mode} />}
-        {screen === S.AVATAR && <AvatarScreen onBack={() => setScreen(S.HOME)} avatar={avatar} setAvatar={setAvatar} coins={coins} spendCoins={spendCoins} />}
-        {screen === S.HOUSE && <HouseScreen onBack={() => setScreen(S.HOME)} house={house} setHouse={setHouse} coins={coins} spendCoins={spendCoins} />}
-        {screen === S.GAME && <GameScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} />}
-        {screen === S.BREATHE && <BreatheScreen onBack={() => setScreen(S.GAME)} />}
-        {screen === S.CHAT && <ChatScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} setChatContact={setChatContact} />}
-        {screen === S.LIVE && <LiveScreen onBack={() => setScreen(S.HOME)} />}
-        {screen === S.RESOURCES && <ResourcesScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} setFiche={setFiche} />}
-        {screen === S.FICHE && <FicheScreen onBack={() => setScreen(S.RESOURCES)} fiche={fiche} />}
-        {screen === S.PROFILE && <ProfileScreen onBack={() => setScreen(S.HOME)} coins={coins} quests={quests} avatar={avatar} mode={mode} setMode={setMode} />}
-      </div>
-
-      <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: C.bgCard, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "8px 0 16px" }}>
-        {navItems.map(item => (
-          <button key={item.s} onClick={() => setScreen(item.s)} style={{ background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", padding: "4px 12px", color: screen === item.s ? C.purple : C.muted, fontWeight: screen === item.s ? 700 : 400 }}>
-            <span style={{ fontSize: 20 }}>{item.icon}</span>
-            <span style={{ fontSize: 11 }}>{item.label}</span>
-          </button>
-        ))}
-      </nav>
-    </div>
-  );
-}
+    <div style={{
