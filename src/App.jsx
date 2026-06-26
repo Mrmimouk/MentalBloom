@@ -2046,4 +2046,72 @@ function MentalBloom({ user, onLogout }) {
   const mainScreens = [S.HOME, S.QUESTS, S.CHAT, S.RESOURCES];
 
   return (
-    <div style={{
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: C.bg, minHeight: "100vh", maxWidth: 430, margin: "0 auto", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 72 }}>
+        {screen === S.HOME && <HomeScreen setScreen={setScreen} quests={quests} coins={coins} user={user} />}
+        {screen === S.QUESTS && <QuestsScreen onBack={() => setScreen(S.HOME)} quests={quests} setQuests={setQuests} addCoins={addCoins} mode={mode} />}
+        {screen === S.GAME && <GameScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} />}
+        {screen === S.BREATHE    && <BreatheScreen    onBack={() => setScreen(S.GAME)} />}
+        {screen === S.SCAN       && <ScanScreen       onBack={() => setScreen(S.GAME)} addCoins={addCoins} />}
+        {screen === S.JOURNAL    && <JournalScreen    onBack={() => setScreen(S.GAME)} addCoins={addCoins} />}
+        {screen === S.GRATITUDE  && <GratitudeScreen  onBack={() => setScreen(S.GAME)} addCoins={addCoins} />}
+        {screen === S.COGNITIF   && <CognitifScreen   onBack={() => setScreen(S.GAME)} addCoins={addCoins} />}
+        {screen === S.COMMUNAUTE && <CommunauteScreen onBack={() => setScreen(S.HOME)} />}
+        {screen === S.HUMEUR     && <SuiviHumeurScreen onBack={() => setScreen(S.HOME)} />}
+        {screen === S.URGENCES   && <UrgencesScreen   onBack={() => setScreen(S.HOME)} />}
+        {screen === S.RAPPELS    && <RappelsScreen    onBack={() => setScreen(S.HOME)} />}
+        {screen === S.CHAT && <ChatScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} setChatContact={setChatContact} />}
+        {screen === S.LIVE && <LiveScreen onBack={() => setScreen(S.HOME)} />}
+        {screen === S.RESOURCES && <ResourcesScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} setFiche={setFiche} />}
+        {screen === S.FICHE && <FicheScreen onBack={() => setScreen(S.RESOURCES)} fiche={fiche} />}
+        {screen === S.PROFILE && <ProfileScreen onBack={() => setScreen(S.HOME)} coins={coins} quests={quests} mode={mode} setMode={setMode} user={user} onLogout={onLogout} />}
+      </div>
+
+      <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: C.bgCard, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "8px 0 16px" }}>
+        {navItems.map(item => (
+          <button key={item.s} onClick={() => setScreen(item.s)} style={{ background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, cursor: "pointer", padding: "4px 12px", color: screen === item.s ? C.purple : C.muted, fontWeight: screen === item.s ? 700 : 400 }}>
+            <span style={{ fontSize: 20 }}>{item.icon}</span>
+            <span style={{ fontSize: 11 }}>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+// ─── Root App avec auth ───────────────────────────────────────
+export default function App() {
+  const [authState, setAuthState] = useState("splash"); // splash | onboarding | login | register | app
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    // Check if user already logged in
+    const saved = localStorage.getItem("mb_current_user");
+    if (saved) {
+      const user = JSON.parse(saved);
+      setCurrentUser(user);
+      setAuthState("app");
+    }
+  }, []);
+
+  const handleLogin = (user) => {
+    localStorage.setItem("mb_current_user", JSON.stringify(user));
+    setCurrentUser(user);
+    setAuthState("app");
+  };
+
+  const handleLogout = async () => {
+    if (currentUser?.token) await supabase.signOut(currentUser.token);
+    localStorage.removeItem("mb_current_user");
+    setCurrentUser(null);
+    setAuthState("login");
+  };
+
+  if (authState === "splash") return <SplashScreen onFinish={() => setAuthState("onboarding")} />;
+  if (authState === "onboarding") return <OnboardingScreen onFinish={() => setAuthState("login")} />;
+  if (authState === "login") return <LoginScreen onLogin={handleLogin} onGoRegister={() => setAuthState("register")} />;
+  if (authState === "register") return <RegisterScreen onRegister={handleLogin} onGoLogin={() => setAuthState("login")} />;
+  if (authState === "app") return <MentalBloom user={currentUser} onLogout={handleLogout} />;
+
+  return null;
+}
