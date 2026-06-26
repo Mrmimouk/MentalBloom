@@ -209,11 +209,7 @@ const MEDICAMENTS = [
   { nom: "Lithium", famille: "Stabilisateur de l'humeur", indications: "Trouble bipolaire", effets_freq: ["Tremblements légers", "Soif", "Polyurie"], effets_rares: ["Toxicité rénale"], precautions: "Suivi sanguin régulier obligatoire." },
 ];
 
-const URGENCES = [
-  { nom: "Urgences psychiatriques CHU", ville: "Paris 13e", tel: "01 42 16 00 00", ouvert: "24h/24" },
-  { nom: "CMP — Centre médico-psychologique", ville: "Paris 11e", tel: "01 43 67 12 34", ouvert: "Lun-Ven 9h-17h" },
-  { nom: "Clinique des Lilas", ville: "Les Lilas (93)", tel: "01 49 72 72 00", ouvert: "24h/24" },
-];
+
 
 // ─── Components ───────────────────────────────────────────────
 
@@ -1928,12 +1924,22 @@ function ResourcesScreen({ onBack, setScreen, setFiche }) {
             <div style={{ color: C.muted, fontSize: 13 }}>Gratuit · 24h/24 · 7j/7 · Confidentiel</div>
             <Btn color={C.urgent} small style={{ marginTop: 10 }}>Appeler maintenant</Btn>
           </Card>
-          {URGENCES.map((u, i) => (
-            <Card key={i}>
-              <div style={{ fontWeight: 700, color: C.text }}>{u.nom}</div>
-              <div style={{ fontSize: 13, color: C.muted }}>📍 {u.ville}</div>
-              <div style={{ fontSize: 13, color: C.muted }}>📞 {u.tel}</div>
-              <div style={{ fontSize: 13, color: C.green, fontWeight: 600 }}>⏰ {u.ouvert}</div>
+          {URGENCES_DATA.map((u, i) => (
+            <Card key={i} style={{ background: u.bg, border: `1px solid ${u.color}33` }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span style={{ fontSize: 24, flexShrink: 0 }}>{u.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: C.text, fontSize: 13 }}>{u.nom}</div>
+                  {u.ville && <div style={{ fontSize: 12, color: C.muted }}>📍 {u.ville}</div>}
+                  <div style={{ fontSize: 12, color: C.muted }}>📞 {u.tel}</div>
+                  <div style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>⏰ {u.ouvert}</div>
+                  {u.region && <div style={{ fontSize: 11, color: C.purple, fontWeight: 600 }}>🗺 {u.region}</div>}
+                </div>
+                <a href={"tel:" + u.tel} style={{ textDecoration: "none", flexShrink: 0 }}>
+                  <div style={{ background: u.color, color: "#fff", borderRadius: 10,
+                    padding: "5px 10px", fontSize: 11, fontWeight: 700 }}>📞</div>
+                </a>
+              </div>
             </Card>
           ))}
         </div>
