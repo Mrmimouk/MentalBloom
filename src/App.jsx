@@ -1358,10 +1358,91 @@ function ChatScreen({ onBack, setScreen, setChatContact }) {
 }
 
 function ChatRoomScreen({ onBack, contact, user }) {
-  const [msgs, setMsgs] = useState([{ from: "them", text: "Bonjour, je suis " + contact.name + ". Comment puis-je vous aider aujourd'hui ?", time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) }]);
+  const welcomeMsg = {
+    id: "welcome",
+    from: "them",
+    text: "Bonjour, je suis " + contact.name + ". Comment puis-je vous aider aujourd'hui ?",
+    time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+  };
+  const [msgs, setMsgs] = useState([welcomeMsg]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [typing, setTyping] = useState(false);
   const endRef = useRef(null);
+  const wsRef = useRef(null);
+
+  // Charger les messages existants + connexion temps réel
+  useEffect(() => {
+    let ws = null;
+
+    const loadMessages = async () => {
+      if (!user?.token) return;
+      try {
+        const data = await supabase.getMessages(contact.id || contact.name, user.token);
+        if (Array.isArray(data) && data.length > 0) {
+          const formatted = data.map(m => ({
+            id: m.id,
+            from: m.sender_id === user.id ? "me" : "them",
+            text: m.content,
+            time: new Date(m.created_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+          }));
+          setMsgs([welcomeMsg, ...formatted]);
+        }
+      } catch(e) { console.log("Could not load messages"); }
+    };
+
+    const connectRealtime = () => {
+      try {
+        ws = new WebSocket(
+          "wss://umhfmhvzttifqdenriwq.supabase.co/realtime/v1/websocket?apikey=sb_publishable_p5H4tjNv8q0Wta_OuRugwA_CE8NLcev&vsn=1.0.0"
+        );
+
+        ws.onopen = () => {
+          setConnected(true);
+          ws.send(JSON.stringify({
+            topic: "realtime:public:messages",
+            event: "phx_join",
+            payload: { config: { broadcast: { self: false }, presence: { key: "" } } },
+            ref: "1"
+          }));
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.event === "INSERT" && data.payload?.record) {
+              const record = data.payload.record;
+              if (record.sender_id !== user?.id) {
+                setMsgs(m => [...m, {
+                  id: record.id,
+                  from: "them",
+                  text: record.content,
+                  time: new Date(record.created_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+                }]);
+              }
+            }
+          } catch(err) {}
+        };
+
+        ws.onclose = () => {
+          setConnected(false);
+          // Reconnect after 3s
+          setTimeout(connectRealtime, 3000);
+        };
+
+        ws.onerror = () => { setConnected(false); };
+        wsRef.current = ws;
+      } catch(e) { console.log("WebSocket error", e); }
+    };
+
+    loadMessages();
+    connectRealtime();
+
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, []);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
@@ -1370,8 +1451,15 @@ function ChatRoomScreen({ onBack, contact, user }) {
     const text = input.trim();
     setInput("");
     setSending(true);
-    const newMsg = { from: "me", text, time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) };
+
+    const newMsg = {
+      id: Date.now(),
+      from: "me",
+      text,
+      time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+    };
     setMsgs(m => [...m, newMsg]);
+
     try {
       if (user?.token) {
         await supabase.sendMessage({
@@ -1381,24 +1469,34 @@ function ChatRoomScreen({ onBack, contact, user }) {
           created_at: new Date().toISOString()
         }, user.token);
       }
-    } catch(e) { console.log("Message saved locally only"); }
+    } catch(e) { console.log("Send error", e); }
+
     setSending(false);
-    setTimeout(() => {
-      setMsgs(m => [...m, {
-        from: "them",
-        text: "Merci de partager ça avec moi. Je vous écoute. Pouvez-vous m'en dire un peu plus ?",
-        time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
-      }]);
-    }, 1500);
+
+    // Réponse automatique si pas de vraie personne connectée
+    if (!connected) {
+      setTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        setMsgs(m => [...m, {
+          id: Date.now() + 1,
+          from: "them",
+          text: "Merci de partager ça avec moi. Je vous écoute. Pouvez-vous m'en dire un peu plus ?",
+          time: new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+        }]);
+      }, 2000);
+    }
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: C.bg }}>
       <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 12, background: C.bgCard }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: C.purple, fontWeight: 700, fontSize: 18, cursor: "pointer" }}>←</button>
         <div style={{ width: 40, height: 40, borderRadius: "50%", background: contact.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800 }}>{contact.name[0]}</div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, color: C.text }}>{contact.name}</div>
-          <div style={{ fontSize: 12, color: C.green }}>{contact.role}</div>
+          <div style={{ fontSize: 12, color: connected ? C.green : C.muted }}>
+            {connected ? "🟢 Connecté en temps réel" : contact.role}
+          </div>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1410,11 +1508,25 @@ function ChatRoomScreen({ onBack, contact, user }) {
             </div>
           </div>
         ))}
+        {typing && (
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ padding: "10px 16px", borderRadius: "18px 18px 18px 4px",
+              background: C.bgCard, border: `1px solid ${C.border}`,
+              display: "flex", gap: 4, alignItems: "center" }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ width: 7, height: 7, borderRadius: "50%",
+                  background: C.muted, opacity: 0.5 + i * 0.2 }} />
+              ))}
+            </div>
+          </div>
+        )}
         <div ref={endRef} />
       </div>
       <div style={{ padding: "12px 16px", borderTop: `1px solid ${C.border}`, display: "flex", gap: 8, background: C.bgCard }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Écrivez votre message…" style={{ flex: 1, padding: "10px 16px", borderRadius: 24, border: `1px solid ${C.border}`, outline: "none", fontSize: 14, background: C.bg }} />
-        <Btn onClick={send} style={{ padding: "10px 18px", borderRadius: 24, margin: 0 }}>↑</Btn>
+        <Btn onClick={send} color={sending ? C.muted : C.purple} style={{ padding: "10px 18px", borderRadius: 24, margin: 0 }}>
+          {sending ? "..." : "↑"}
+        </Btn>
       </div>
     </div>
   );
@@ -2034,7 +2146,7 @@ function MentalBloom({ user, onLogout }) {
 
   const noNav = [S.CHAT_ROOM];
 
-  if (screen === S.CHAT_ROOM) return <ChatRoomScreen onBack={() => setScreen(S.CHAT)} contact={chatContact} />;
+  if (screen === S.CHAT_ROOM) return <ChatRoomScreen onBack={() => setScreen(S.CHAT)} contact={chatContact} user={user} />;
 
   const navItems = [
     { icon: "🏠", label: "Accueil", s: S.HOME },
