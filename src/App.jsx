@@ -259,107 +259,114 @@ function BackBtn({ onBack }) {
 // ─── Screens ──────────────────────────────────────────────────
 
 
+
 // ─── Avatars émotions ─────────────────────────────────────────
 const EMOTION_AVATARS = [
-  { id: "joyeux", emoji: "😊", label: "Joyeux·se", color: "#FFD700", bg: "#FEF9E4",
-    svg: `<circle cx="50" cy="50" r="45" fill="#FFD700" stroke="#F0A500" stroke-width="2"/>
-          <circle cx="35" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="38" r="2" fill="white"/>
-          <circle cx="67" cy="38" r="2" fill="white"/>
-          <path d="M 30 60 Q 50 78 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <ellipse cx="25" cy="58" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/>
-          <ellipse cx="75" cy="58" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/>` },
-  { id: "triste", emoji: "😔", label: "Triste", color: "#7EB8D4", bg: "#E5F0FF",
-    svg: `<circle cx="50" cy="50" r="45" fill="#7EB8D4" stroke="#5A9AC0" stroke-width="2"/>
-          <circle cx="35" cy="42" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="42" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="40" r="2" fill="white"/>
-          <circle cx="67" cy="40" r="2" fill="white"/>
-          <path d="M 30 65 Q 50 55 70 65" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 28 35 Q 35 30 40 38" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <path d="M 72 35 Q 65 30 60 38" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <circle cx="38" cy="55" r="3" fill="#A8D4F0" opacity="0.8"/>
-          <circle cx="62" cy="57" r="3" fill="#A8D4F0" opacity="0.8"/>` },
-  { id: "anxieux", emoji: "😰", label: "Anxieux·se", color: "#A0C4A0", bg: "#E5FFE5",
-    svg: `<circle cx="50" cy="50" r="45" fill="#A0C4A0" stroke="#7BA87B" stroke-width="2"/>
-          <ellipse cx="35" cy="42" rx="7" ry="6" fill="#2A2540"/>
-          <ellipse cx="65" cy="42" rx="7" ry="6" fill="#2A2540"/>
-          <circle cx="37" cy="40" r="2" fill="white"/>
-          <circle cx="67" cy="40" r="2" fill="white"/>
-          <path d="M 35 63 Q 43 58 50 63 Q 57 68 65 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <path d="M 28 32 Q 36 27 40 35" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <path d="M 72 32 Q 64 27 60 35" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <circle cx="72" cy="38" r="5" fill="#A8D4F0" opacity="0.7"/>` },
-  { id: "colere", emoji: "😡", label: "En colère", color: "#E07070", bg: "#FEE2E2",
-    svg: `<circle cx="50" cy="50" r="45" fill="#E07070" stroke="#C05050" stroke-width="2"/>
-          <circle cx="35" cy="45" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="45" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="43" r="2" fill="white"/>
-          <circle cx="67" cy="43" r="2" fill="white"/>
-          <path d="M 30 63 Q 50 55 70 63" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 25 30 L 45 38" stroke="#2A2540" stroke-width="3" stroke-linecap="round"/>
-          <path d="M 75 30 L 55 38" stroke="#2A2540" stroke-width="3" stroke-linecap="round"/>
-          <path d="M 30 22 L 42 34" stroke="#FF6B35" stroke-width="2" stroke-linecap="round"/>
-          <path d="M 70 22 L 58 34" stroke="#FF6B35" stroke-width="2" stroke-linecap="round"/>` },
-  { id: "calme", emoji: "😌", label: "Calme", color: "#B0A0D0", bg: "#EDE8F8",
-    svg: `<circle cx="50" cy="50" r="45" fill="#B0A0D0" stroke="#9080C0" stroke-width="2"/>
-          <path d="M 28 42 Q 35 38 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <path d="M 58 42 Q 65 38 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <path d="M 33 60 Q 50 70 67 60" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <ellipse cx="25" cy="56" rx="7" ry="5" fill="#FFB3C6" opacity="0.4"/>
-          <ellipse cx="75" cy="56" rx="7" ry="5" fill="#FFB3C6" opacity="0.4"/>` },
-  { id: "fatigue", emoji: "😴", label: "Fatigué·e", color: "#9090B0", bg: "#E8E8F8",
-    svg: `<circle cx="50" cy="50" r="45" fill="#9090B0" stroke="#7070A0" stroke-width="2"/>
-          <path d="M 28 44 Q 35 40 42 44" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 58 44 Q 65 40 72 44" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 35 62 Q 50 68 65 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <text x="68" y="30" font-size="18" fill="#FFD700">z</text>
-          <text x="75" y="20" font-size="14" fill="#FFD700">z</text>
-          <text x="80" y="12" font-size="10" fill="#FFD700">z</text>` },
-  { id: "heureux", emoji: "🥰", label: "Aimé·e", color: "#E891B0", bg: "#FDEAF2",
-    svg: `<circle cx="50" cy="50" r="45" fill="#E891B0" stroke="#D06090" stroke-width="2"/>
-          <circle cx="35" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="38" r="2" fill="white"/>
-          <circle cx="67" cy="38" r="2" fill="white"/>
-          <path d="M 28 58 Q 50 75 72 58" stroke="#2A2540" stroke-width="3" fill="#FFB3C6" stroke-linecap="round"/>
-          <path d="M 20 25 Q 25 18 30 25 Q 25 32 20 25 Z" fill="#E05A5A"/>
-          <path d="M 32 18 Q 37 11 42 18 Q 37 25 32 18 Z" fill="#E05A5A"/>
-          <path d="M 58 18 Q 63 11 68 18 Q 63 25 58 18 Z" fill="#E05A5A"/>
-          <path d="M 70 25 Q 75 18 80 25 Q 75 32 70 25 Z" fill="#E05A5A"/>` },
-  { id: "stresse", emoji: "😤", label: "Stressé·e", color: "#F4A261", bg: "#FEF0E4",
-    svg: `<circle cx="50" cy="50" r="45" fill="#F4A261" stroke="#D4824A" stroke-width="2"/>
-          <circle cx="35" cy="43" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="43" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="41" r="2" fill="white"/>
-          <circle cx="67" cy="41" r="2" fill="white"/>
-          <path d="M 33 62 Q 50 55 67 62" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 28 30 Q 36 25 42 32" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <path d="M 72 30 Q 64 25 58 32" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <path d="M 44 10 Q 50 5 56 10" stroke="#E05A5A" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <path d="M 47 5 Q 50 2 53 5" stroke="#E05A5A" stroke-width="1.5" fill="none" stroke-linecap="round"/>` },
-  { id: "confus", emoji: "😕", label: "Confus·e", color: "#C4AEE8", bg: "#EDE8F8",
-    svg: `<circle cx="50" cy="50" r="45" fill="#C4AEE8" stroke="#A090D0" stroke-width="2"/>
-          <circle cx="35" cy="42" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="42" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="40" r="2" fill="white"/>
-          <circle cx="67" cy="40" r="2" fill="white"/>
-          <path d="M 36 63 Q 43 60 50 65 Q 57 60 64 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-          <path d="M 28 33 Q 36 28 43 35" stroke="#2A2540" stroke-width="2" fill="none"/>
-          <text x="68" y="35" font-size="16" fill="#2A2540">?</text>` },
-  { id: "reconnaissant", emoji: "🤗", label: "Reconnaissant·e", color: "#7BBF9A", bg: "#E4F5EC",
-    svg: `<circle cx="50" cy="50" r="45" fill="#7BBF9A" stroke="#5AA882" stroke-width="2"/>
-          <circle cx="35" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="65" cy="40" r="6" fill="#2A2540"/>
-          <circle cx="37" cy="38" r="2" fill="white"/>
-          <circle cx="67" cy="38" r="2" fill="white"/>
-          <path d="M 28 60 Q 50 76 72 60" stroke="#2A2540" stroke-width="3" fill="#A8E4C0" stroke-linecap="round"/>
-          <path d="M 15 50 Q 20 42 28 48" stroke="#5AA882" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 85 50 Q 80 42 72 48" stroke="#5AA882" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <ellipse cx="25" cy="56" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/>
-          <ellipse cx="75" cy="56" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/>` },
+  // ── Émotions de base ──
+  { id: "joie", emoji: "😊", label: "Joie", color: "#FFD700", bg: "#FEF9E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FFD700" stroke="#F0A500" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 78 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="25" cy="58" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/><ellipse cx="75" cy="58" rx="8" ry="5" fill="#FFB3C6" opacity="0.5"/>` },
+  { id: "tristesse", emoji: "😔", label: "Tristesse", color: "#7EB8D4", bg: "#E5F0FF",
+    svg: `<circle cx="50" cy="50" r="45" fill="#7EB8D4" stroke="#5A9AC0" stroke-width="2"/><circle cx="35" cy="42" r="6" fill="#2A2540"/><circle cx="65" cy="42" r="6" fill="#2A2540"/><circle cx="37" cy="40" r="2" fill="white"/><circle cx="67" cy="40" r="2" fill="white"/><path d="M 30 65 Q 50 55 70 65" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 28 35 Q 35 30 40 38" stroke="#2A2540" stroke-width="2" fill="none"/><path d="M 72 35 Q 65 30 60 38" stroke="#2A2540" stroke-width="2" fill="none"/><circle cx="38" cy="58" r="3" fill="#A8D4F0" opacity="0.8"/><circle cx="62" cy="60" r="3" fill="#A8D4F0" opacity="0.8"/>` },
+  { id: "colere", emoji: "😡", label: "Colère", color: "#E05A5A", bg: "#FEE2E2",
+    svg: `<circle cx="50" cy="50" r="45" fill="#E05A5A" stroke="#C04040" stroke-width="2"/><circle cx="35" cy="45" r="6" fill="#2A2540"/><circle cx="65" cy="45" r="6" fill="#2A2540"/><path d="M 30 63 Q 50 55 70 63" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 25 30 L 45 38" stroke="#2A2540" stroke-width="3" stroke-linecap="round"/><path d="M 75 30 L 55 38" stroke="#2A2540" stroke-width="3" stroke-linecap="round"/>` },
+  { id: "peur", emoji: "😱", label: "Peur", color: "#9B8EC4", bg: "#EDE8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#9B8EC4" stroke="#7B6EA4" stroke-width="2"/><ellipse cx="35" cy="42" rx="8" ry="9" fill="#2A2540"/><ellipse cx="65" cy="42" rx="8" ry="9" fill="#2A2540"/><circle cx="37" cy="40" r="3" fill="white"/><circle cx="67" cy="40" r="3" fill="white"/><ellipse cx="50" cy="64" rx="14" ry="10" fill="#2A2540"/><ellipse cx="50" cy="64" rx="10" ry="7" fill="#1A1530"/><path d="M 28 32 Q 36 26 42 34" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "surprise", emoji: "😮", label: "Surprise", color: "#F4C430", bg: "#FEF9E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#F4C430" stroke="#D4A410" stroke-width="2"/><ellipse cx="35" cy="40" rx="7" ry="8" fill="#2A2540"/><ellipse cx="65" cy="40" rx="7" ry="8" fill="#2A2540"/><circle cx="37" cy="38" r="2.5" fill="white"/><circle cx="67" cy="38" r="2.5" fill="white"/><ellipse cx="50" cy="65" rx="12" ry="10" fill="#2A2540"/><path d="M 28 30 Q 35 24 40 32" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "degout", emoji: "🤢", label: "Dégoût", color: "#7BBF9A", bg: "#E4F5EC",
+    svg: `<circle cx="50" cy="50" r="45" fill="#7BBF9A" stroke="#5AA882" stroke-width="2"/><path d="M 28 40 Q 35 36 42 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 40 Q 65 36 72 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 35 62 Q 43 57 50 62 Q 57 67 65 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 28 33 L 42 38" stroke="#2A2540" stroke-width="2"/><path d="M 72 33 L 58 38" stroke="#2A2540" stroke-width="2"/>` },
+  { id: "mepris", emoji: "😒", label: "Mépris", color: "#B0A0A0", bg: "#F5F0F0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#B0A0A0" stroke="#907080" stroke-width="2"/><path d="M 28 40 Q 35 36 42 42" stroke="#2A2540" stroke-width="2.5" fill="none"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 33 63 Q 45 58 60 65" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
+  { id: "confiance", emoji: "🤝", label: "Confiance", color: "#4A90D9", bg: "#E5F0FF",
+    svg: `<circle cx="50" cy="50" r="45" fill="#4A90D9" stroke="#2A70B9" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 72 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 15 55 Q 22 48 30 54" stroke="#4A90D9" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 85 55 Q 78 48 70 54" stroke="#4A90D9" stroke-width="3" fill="none" stroke-linecap="round"/>` },
+  { id: "anticipation", emoji: "🤩", label: "Anticipation", color: "#FF8C42", bg: "#FEF0E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FF8C42" stroke="#DD6C22" stroke-width="2"/><circle cx="35" cy="40" r="7" fill="#2A2540"/><circle cx="65" cy="40" r="7" fill="#2A2540"/><circle cx="38" cy="37" r="3" fill="white"/><circle cx="68" cy="37" r="3" fill="white"/><path d="M 28 60 Q 50 76 72 60" stroke="#2A2540" stroke-width="3" fill="#FFB380" stroke-linecap="round"/><path d="M 42 15 L 45 25" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><path d="M 50 12 L 50 22" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/><path d="M 58 15 L 55 25" stroke="#FFD700" stroke-width="2" stroke-linecap="round"/>` },
+  { id: "amour", emoji: "🥰", label: "Amour", color: "#E891B0", bg: "#FDEAF2",
+    svg: `<circle cx="50" cy="50" r="45" fill="#E891B0" stroke="#C86090" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 28 60 Q 50 76 72 60" stroke="#2A2540" stroke-width="3" fill="#FFB3C6" stroke-linecap="round"/><path d="M 18 22 Q 24 14 30 22 Q 24 30 18 22Z" fill="#E05A5A"/><path d="M 30 15 Q 36 7 42 15 Q 36 23 30 15Z" fill="#E05A5A"/><path d="M 58 15 Q 64 7 70 15 Q 64 23 58 15Z" fill="#E05A5A"/><path d="M 70 22 Q 76 14 82 22 Q 76 30 70 22Z" fill="#E05A5A"/>` },
+  { id: "affection", emoji: "😍", label: "Affection", color: "#FF69B4", bg: "#FDEAF2",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FF69B4" stroke="#DD4994" stroke-width="2"/><path d="M 27 35 Q 33 27 39 35 Q 33 43 27 35Z" fill="#E05A5A"/><path d="M 39 28 Q 45 20 51 28 Q 45 36 39 28Z" fill="#E05A5A"/><path d="M 49 35 Q 55 27 61 35 Q 55 43 49 35Z" fill="#E05A5A"/><path d="M 61 28 Q 67 20 73 28 Q 67 36 61 28Z" fill="#E05A5A"/><path d="M 30 62 Q 50 76 70 62" stroke="#2A2540" stroke-width="3" fill="#FFB3C6" stroke-linecap="round"/>` },
+  { id: "compassion", emoji: "🫶", label: "Compassion", color: "#C4AEE8", bg: "#EDE8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#C4AEE8" stroke="#A490C8" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 74 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 38 68 Q 44 60 50 68 Q 44 76 38 68Z" fill="#E05A5A"/><path d="M 50 65 Q 56 57 62 65 Q 56 73 50 65Z" fill="#E05A5A"/>` },
+  { id: "empathie", emoji: "🫂", label: "Empathie", color: "#7BBF9A", bg: "#E4F5EC",
+    svg: `<circle cx="50" cy="50" r="45" fill="#7BBF9A" stroke="#5AA882" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 74 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 12 50 Q 18 40 28 48" stroke="#5AA882" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M 88 50 Q 82 40 72 48" stroke="#5AA882" stroke-width="4" fill="none" stroke-linecap="round"/>` },
+  { id: "gratitude", emoji: "🙏", label: "Gratitude", color: "#F4A261", bg: "#FEF0E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#F4A261" stroke="#D48241" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 74 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 42 72 L 42 85 L 50 80 L 58 85 L 58 72" stroke="#D48241" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
+  { id: "fierte", emoji: "😤", label: "Fierté", color: "#9B59B6", bg: "#F0E8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#9B59B6" stroke="#7B39A6" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 58 Q 50 70 70 58" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 42 20 L 50 8 L 58 20" stroke="#FFD700" stroke-width="3" fill="#FFD700" stroke-linecap="round"/><line x1="50" y1="8" x2="50" y2="28" stroke="#FFD700" stroke-width="2"/>` },
+  { id: "honte", emoji: "😳", label: "Honte", color: "#E07070", bg: "#FEE2E2",
+    svg: `<circle cx="50" cy="50" r="45" fill="#E07070" stroke="#C05050" stroke-width="2"/><path d="M 28 42 Q 35 38 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 38 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 35 65 Q 50 60 65 65" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="28" cy="55" rx="10" ry="7" fill="#FF6B6B" opacity="0.6"/><ellipse cx="72" cy="55" rx="10" ry="7" fill="#FF6B6B" opacity="0.6"/>` },
+  { id: "culpabilite", emoji: "😞", label: "Culpabilité", color: "#8090A0", bg: "#E8EEF5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#8090A0" stroke="#607090" stroke-width="2"/><path d="M 28 42 Q 35 38 42 44" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 58 42 Q 65 38 72 44" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 35 66 Q 50 60 65 66" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 42 20 Q 50 14 58 20 Q 50 30 42 20Z" fill="#E05A5A" opacity="0.7"/>` },
+  { id: "embarras", emoji: "😅", label: "Embarras", color: "#F4A0A0", bg: "#FDEAEA",
+    svg: `<circle cx="50" cy="50" r="45" fill="#F4A0A0" stroke="#D48080" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 33 62 Q 50 70 67 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="20" cy="50" rx="12" ry="8" fill="#FF6B6B" opacity="0.5"/><ellipse cx="80" cy="50" rx="12" ry="8" fill="#FF6B6B" opacity="0.5"/><circle cx="72" cy="32" r="5" fill="#A8D4F0" opacity="0.8"/>` },
+  { id: "jalousie", emoji: "😒", label: "Jalousie", color: "#60A060", bg: "#E4F5E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#60A060" stroke="#408040" stroke-width="2"/><circle cx="35" cy="42" r="6" fill="#2A2540"/><circle cx="65" cy="42" r="6" fill="#2A2540"/><circle cx="37" cy="40" r="2" fill="white"/><circle cx="67" cy="40" r="2" fill="white"/><path d="M 35 63 Q 50 57 65 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 28 30 Q 36 24 42 32" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "envie", emoji: "🫢", label: "Envie", color: "#A0C060", bg: "#F0F8E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#A0C060" stroke="#80A040" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 33 62 Q 50 70 67 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 68 22 Q 76 16 80 24" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>` },
+  { id: "admiration", emoji: "🤩", label: "Admiration", color: "#FFB830", bg: "#FEF5E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FFB830" stroke="#DD9810" stroke-width="2"/><path d="M 25 35 Q 35 25 45 35 Q 35 45 25 35Z" fill="#FFD700"/><path d="M 55 35 Q 65 25 75 35 Q 65 45 55 35Z" fill="#FFD700"/><path d="M 28 62 Q 50 76 72 62" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>` },
+  { id: "soulagement", emoji: "😌", label: "Soulagement", color: "#90C890", bg: "#E8F8E8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#90C890" stroke="#70A870" stroke-width="2"/><path d="M 28 42 Q 35 38 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 38 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 30 60 Q 50 74 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 30 22 Q 50 16 70 22" stroke="#70A870" stroke-width="2" fill="none" stroke-linecap="round"/>` },
+  { id: "espoir", emoji: "🌟", label: "Espoir", color: "#FFD700", bg: "#FEF9E4",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FFD700" stroke="#F0B000" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 30 60 Q 50 72 70 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 50 5 L 52 15 L 60 12 L 54 20 L 60 26 L 50 22 L 40 26 L 46 20 L 40 12 L 48 15 Z" fill="#FFF" opacity="0.8"/>` },
+  { id: "desespoir", emoji: "😢", label: "Désespoir", color: "#5070A0", bg: "#E0E8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#5070A0" stroke="#304080" stroke-width="2"/><path d="M 26 40 Q 35 33 42 40" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 58 40 Q 65 33 72 40" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 32 67 Q 50 58 68 67" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="35" cy="58" r="4" fill="#A8D4F0"/><circle cx="65" cy="60" r="4" fill="#A8D4F0"/><circle cx="32" cy="65" r="3" fill="#A8D4F0"/>` },
+  { id: "deception", emoji: "😟", label: "Déception", color: "#9090B0", bg: "#E8E8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#9090B0" stroke="#7070A0" stroke-width="2"/><path d="M 28 40 Q 35 36 42 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 40 Q 65 36 72 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 33 66 Q 50 58 67 66" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 28 32 Q 36 27 42 34" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "frustration", emoji: "😤", label: "Frustration", color: "#D4602A", bg: "#FAEAE0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#D4602A" stroke="#B44010" stroke-width="2"/><circle cx="35" cy="43" r="6" fill="#2A2540"/><circle cx="65" cy="43" r="6" fill="#2A2540"/><path d="M 33 63 Q 50 56 67 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 28 30 Q 36 25 42 32" stroke="#2A2540" stroke-width="2" fill="none"/><path d="M 72 30 Q 64 25 58 32" stroke="#2A2540" stroke-width="2" fill="none"/><path d="M 44 8 Q 50 4 56 8" stroke="#FF6B35" stroke-width="2" fill="none"/>` },
+  { id: "irritation", emoji: "😠", label: "Irritation", color: "#C05030", bg: "#FAE8E0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#C05030" stroke="#A03010" stroke-width="2"/><circle cx="35" cy="44" r="6" fill="#2A2540"/><circle cx="65" cy="44" r="6" fill="#2A2540"/><path d="M 32 64 Q 50 57 68 64" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 26 31 L 44 39" stroke="#2A2540" stroke-width="2.5" stroke-linecap="round"/><path d="M 74 31 L 56 39" stroke="#2A2540" stroke-width="2.5" stroke-linecap="round"/>` },
+  { id: "rage", emoji: "🤬", label: "Rage", color: "#A02020", bg: "#FAE0E0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#A02020" stroke="#801010" stroke-width="2"/><circle cx="35" cy="46" r="6" fill="#2A2540"/><circle cx="65" cy="46" r="6" fill="#2A2540"/><path d="M 30 66 Q 50 57 70 66" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 22 28 L 44 39" stroke="#FF4040" stroke-width="3" stroke-linecap="round"/><path d="M 78 28 L 56 39" stroke="#FF4040" stroke-width="3" stroke-linecap="round"/><path d="M 30 18 L 44 30" stroke="#FF6060" stroke-width="2" stroke-linecap="round"/><path d="M 70 18 L 56 30" stroke="#FF6060" stroke-width="2" stroke-linecap="round"/>` },
+  { id: "haine", emoji: "😈", label: "Haine", color: "#601030", bg: "#F0E0E5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#601030" stroke="#401020" stroke-width="2"/><circle cx="35" cy="46" r="6" fill="#FF4040"/><circle cx="65" cy="46" r="6" fill="#FF4040"/><path d="M 32 66 Q 50 58 68 66" stroke="#FF8080" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 22 26 L 44 38" stroke="#FF4040" stroke-width="3" stroke-linecap="round"/><path d="M 78 26 L 56 38" stroke="#FF4040" stroke-width="3" stroke-linecap="round"/>` },
+  { id: "anxiete", emoji: "😰", label: "Anxiété", color: "#A0C4A0", bg: "#E5FFE5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#A0C4A0" stroke="#7BA87B" stroke-width="2"/><ellipse cx="35" cy="42" rx="7" ry="6" fill="#2A2540"/><ellipse cx="65" cy="42" rx="7" ry="6" fill="#2A2540"/><circle cx="37" cy="40" r="2" fill="white"/><circle cx="67" cy="40" r="2" fill="white"/><path d="M 35 63 Q 43 58 50 63 Q 57 68 65 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="72" cy="38" r="5" fill="#A8D4F0" opacity="0.7"/>` },
+  { id: "stress", emoji: "😫", label: "Stress", color: "#D4A060", bg: "#FAF0E0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#D4A060" stroke="#B48040" stroke-width="2"/><circle cx="35" cy="43" r="6" fill="#2A2540"/><circle cx="65" cy="43" r="6" fill="#2A2540"/><path d="M 33 63 Q 50 56 67 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 28 30 Q 36 25 42 32" stroke="#2A2540" stroke-width="2" fill="none"/><path d="M 72 30 Q 64 25 58 32" stroke="#2A2540" stroke-width="2" fill="none"/><text x="68" y="30" font-size="16" fill="#2A2540">!</text>` },
+  { id: "panique", emoji: "😱", label: "Panique", color: "#C060A0", bg: "#F8E8F5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#C060A0" stroke="#A04080" stroke-width="2"/><ellipse cx="35" cy="42" rx="8" ry="9" fill="#2A2540"/><ellipse cx="65" cy="42" rx="8" ry="9" fill="#2A2540"/><circle cx="37" cy="39" r="3" fill="white"/><circle cx="67" cy="39" r="3" fill="white"/><ellipse cx="50" cy="65" rx="14" ry="10" fill="#2A2540"/><path d="M 28 30 Q 36 24 42 32" stroke="#2A2540" stroke-width="2" fill="none"/><path d="M 72 30 Q 64 24 58 32" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "inquietude", emoji: "😟", label: "Inquiétude", color: "#8090B0", bg: "#E8EEF8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#8090B0" stroke="#607090" stroke-width="2"/><path d="M 28 42 Q 35 37 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 37 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 34 64 Q 50 57 66 64" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 42 22 Q 50 15 58 22" stroke="#2A2540" stroke-width="2" fill="none"/>` },
+  { id: "timidite", emoji: "🫣", label: "Timidité", color: "#F4B0B0", bg: "#FDEAEA",
+    svg: `<circle cx="50" cy="50" r="45" fill="#F4B0B0" stroke="#D49090" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 35 64 Q 50 58 65 64" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="25" cy="54" rx="11" ry="8" fill="#FF9090" opacity="0.6"/><ellipse cx="75" cy="54" rx="11" ry="8" fill="#FF9090" opacity="0.6"/>` },
+  { id: "solitude", emoji: "😶", label: "Solitude", color: "#7080A0", bg: "#E5EAF5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#7080A0" stroke="#506080" stroke-width="2"/><path d="M 28 42 Q 35 38 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 38 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="35" y1="64" x2="65" y2="64" stroke="#2A2540" stroke-width="2.5" stroke-linecap="round"/><circle cx="20" cy="50" r="4" fill="#7080A0" opacity="0.4"/><circle cx="80" cy="50" r="4" fill="#7080A0" opacity="0.4"/>` },
+  { id: "nostalgie", emoji: "🥹", label: "Nostalgie", color: "#B0A0C0", bg: "#EDE8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#B0A0C0" stroke="#9080B0" stroke-width="2"/><path d="M 28 42 Q 35 38 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 38 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 32 62 Q 50 70 68 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="38" cy="55" r="3" fill="#A8D4F0" opacity="0.7"/><path d="M 70 18 Q 78 12 84 20" stroke="#B0A0C0" stroke-width="2" fill="none"/>` },
+  { id: "melancolie", emoji: "😪", label: "Mélancolie", color: "#6080A0", bg: "#E0E8F5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#6080A0" stroke="#406080" stroke-width="2"/><path d="M 27 42 Q 35 37 43 42" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 57 42 Q 65 37 73 42" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 33 66 Q 50 60 67 66" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="37" cy="56" r="3" fill="#A8D4F0" opacity="0.7"/><path d="M 38 59 Q 36 65 35 70" stroke="#A8D4F0" stroke-width="1.5" fill="none"/>` },
+  { id: "ennui", emoji: "😑", label: "Ennui", color: "#A0A0A0", bg: "#F0F0F0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#A0A0A0" stroke="#808080" stroke-width="2"/><path d="M 28 40 Q 35 36 42 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 40 Q 65 36 72 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="33" y1="63" x2="67" y2="63" stroke="#2A2540" stroke-width="2.5" stroke-linecap="round"/><text x="68" y="35" font-size="14" fill="#808080">z</text><text x="74" y="26" font-size="11" fill="#808080">z</text>` },
+  { id: "curiosite", emoji: "🧐", label: "Curiosité", color: "#60A0C0", bg: "#E0F0F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#60A0C0" stroke="#4080A0" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 33 62 Q 50 70 67 62" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><text x="63" y="32" font-size="20" fill="#2A2540">?</text>` },
+  { id: "emerveillement", emoji: "🤯", label: "Émerveillement", color: "#FFB0D0", bg: "#FDE8F5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FFB0D0" stroke="#DD90B0" stroke-width="2"/><circle cx="35" cy="40" r="7" fill="#2A2540"/><circle cx="65" cy="40" r="7" fill="#2A2540"/><circle cx="38" cy="37" r="3" fill="white"/><circle cx="68" cy="37" r="3" fill="white"/><path d="M 28 60 Q 50 75 72 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 42 10 L 44 20" stroke="#FFD700" stroke-width="2"/><path d="M 50 8 L 50 18" stroke="#FFD700" stroke-width="2"/><path d="M 58 10 L 56 20" stroke="#FFD700" stroke-width="2"/><path d="M 35 14 L 40 22" stroke="#FFD700" stroke-width="2"/><path d="M 65 14 L 60 22" stroke="#FFD700" stroke-width="2"/>` },
+  { id: "excitation", emoji: "🤩", label: "Excitation", color: "#FF6080", bg: "#FDEAEE",
+    svg: `<circle cx="50" cy="50" r="45" fill="#FF6080" stroke="#DD4060" stroke-width="2"/><circle cx="35" cy="40" r="7" fill="#2A2540"/><circle cx="65" cy="40" r="7" fill="#2A2540"/><circle cx="38" cy="37" r="3" fill="white"/><circle cx="68" cy="37" r="3" fill="white"/><path d="M 26 60 Q 50 78 74 60" stroke="#2A2540" stroke-width="3" fill="#FFB0C0" stroke-linecap="round"/><path d="M 20 30 L 28 38" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/><path d="M 80 30 L 72 38" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round"/>` },
+  { id: "satisfaction", emoji: "😏", label: "Satisfaction", color: "#70B070", bg: "#E8F5E8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#70B070" stroke="#508050" stroke-width="2"/><path d="M 28 40 Q 35 36 42 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 40 Q 65 36 72 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 32 60 Q 50 72 68 60" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/>` },
+  { id: "serenite", emoji: "😊", label: "Sérénité", color: "#90C8C8", bg: "#E8F8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#90C8C8" stroke="#70A8A8" stroke-width="2"/><path d="M 27 42 Q 35 38 43 42" stroke="#2A2540" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M 57 42 Q 65 38 73 42" stroke="#2A2540" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M 30 60 Q 50 72 70 60" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="25" cy="56" rx="7" ry="5" fill="#FFB3C6" opacity="0.3"/><ellipse cx="75" cy="56" rx="7" ry="5" fill="#FFB3C6" opacity="0.3"/>` },
+  { id: "etonnement", emoji: "😲", label: "Étonnement", color: "#C0A040", bg: "#F8F0E0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#C0A040" stroke="#A08020" stroke-width="2"/><ellipse cx="35" cy="40" rx="7" ry="8" fill="#2A2540"/><ellipse cx="65" cy="40" rx="7" ry="8" fill="#2A2540"/><circle cx="37" cy="38" r="2.5" fill="white"/><circle cx="67" cy="38" r="2.5" fill="white"/><ellipse cx="50" cy="64" rx="11" ry="9" fill="#2A2540"/>` },
+  { id: "confusion", emoji: "😕", label: "Confusion", color: "#C4AEE8", bg: "#EDE8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#C4AEE8" stroke="#A490C8" stroke-width="2"/><circle cx="35" cy="42" r="6" fill="#2A2540"/><circle cx="65" cy="42" r="6" fill="#2A2540"/><circle cx="37" cy="40" r="2" fill="white"/><circle cx="67" cy="40" r="2" fill="white"/><path d="M 36 63 Q 43 60 50 65 Q 57 60 64 63" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><text x="66" y="32" font-size="18" fill="#2A2540">?</text>` },
+  { id: "determination", emoji: "😤", label: "Détermination", color: "#2060A0", bg: "#E0EAF8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#2060A0" stroke="#1040A0" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 28 58 Q 50 68 72 58" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 26 30 L 44 38" stroke="white" stroke-width="2.5" stroke-linecap="round"/><path d="M 74 30 L 56 38" stroke="white" stroke-width="2.5" stroke-linecap="round"/>` },
+  { id: "courage", emoji: "💪", label: "Courage", color: "#E08020", bg: "#FAF0E0",
+    svg: `<circle cx="50" cy="50" r="45" fill="#E08020" stroke="#C06000" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 28 58 Q 50 70 72 58" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 42 20 L 50 8 L 58 20 L 54 20 L 50 12 L 46 20 Z" fill="#FFD700"/>` },
+  { id: "resignation", emoji: "😮‍💨", label: "Résignation", color: "#9090A0", bg: "#EAEAF5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#9090A0" stroke="#707090" stroke-width="2"/><path d="M 27 40 Q 35 36 43 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 57 40 Q 65 36 73 40" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="34" y1="63" x2="66" y2="63" stroke="#2A2540" stroke-width="2.5" stroke-linecap="round"/><path d="M 30 72 Q 50 78 70 72" stroke="#9090A0" stroke-width="2" fill="none" stroke-linecap="round"/>` },
+  { id: "decouragement", emoji: "😞", label: "Découragement", color: "#7070A0", bg: "#E8E8F8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#7070A0" stroke="#505090" stroke-width="2"/><path d="M 26 40 Q 35 34 44 40" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 56 40 Q 65 34 74 40" stroke="#2A2540" stroke-width="2.5" fill="none"/><path d="M 32 67 Q 50 59 68 67" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 38 22 Q 50 16 62 22" stroke="#7070A0" stroke-width="2" fill="none" stroke-dasharray="3,3"/>` },
+  { id: "optimisme", emoji: "😄", label: "Optimisme", color: "#60C060", bg: "#E8F8E8",
+    svg: `<circle cx="50" cy="50" r="45" fill="#60C060" stroke="#40A040" stroke-width="2"/><circle cx="35" cy="40" r="6" fill="#2A2540"/><circle cx="65" cy="40" r="6" fill="#2A2540"/><circle cx="37" cy="38" r="2" fill="white"/><circle cx="67" cy="38" r="2" fill="white"/><path d="M 27 59 Q 50 76 73 59" stroke="#2A2540" stroke-width="3" fill="#A0E8A0" stroke-linecap="round"/><path d="M 42 15 L 50 5 L 58 15" stroke="#FFD700" stroke-width="2.5" fill="none" stroke-linecap="round"/>` },
+  { id: "pessimisme", emoji: "😒", label: "Pessimisme", color: "#607090", bg: "#E8EAF5",
+    svg: `<circle cx="50" cy="50" r="45" fill="#607090" stroke="#405070" stroke-width="2"/><path d="M 28 42 Q 35 37 42 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 58 42 Q 65 37 72 42" stroke="#2A2540" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M 33 67 Q 50 59 67 67" stroke="#2A2540" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M 38 24 Q 50 18 62 24" stroke="#607090" stroke-width="2" fill="none" stroke-dasharray="4,3"/>` },
 ];
+
 
 function AvatarEmotion({ avatar, size = 80 }) {
   const av = EMOTION_AVATARS.find(a => a.id === avatar) || EMOTION_AVATARS[0];
