@@ -2297,7 +2297,12 @@ function SplashScreen({ onFinish }) {
     <div style={{ minHeight: "100vh", background: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       fontFamily: "'Inter', system-ui, sans-serif" }}>
-      <div style={{ fontSize: 72, marginBottom: 16 }}>🌸</div>
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{marginBottom: 16}}>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/>
+          <line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
       <div style={{ fontSize: 32, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>Heidi</div>
       <div style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", marginTop: 8 }}>Un espace pour toi, à ton rythme</div>
       <div style={{ marginTop: 48, display: "flex", gap: 8 }}>
@@ -2316,25 +2321,44 @@ function OnboardingScreen({ onFinish }) {
 
   const slides = [
     {
-      emoji: "🌸",
+      icon: (
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+          <line x1="9" y1="9" x2="9.01" y2="9"/>
+          <line x1="15" y1="9" x2="15.01" y2="9"/>
+        </svg>
+      ),
       title: "Bienvenue sur Heidi",
       desc: "Un espace bienveillant pour prendre soin de ta santé mentale, à ton propre rythme.",
       bg: `linear-gradient(135deg, ${C.purple}, ${C.purpleLight})`,
     },
     {
-      emoji: "🎮",
+      icon: (
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      ),
       title: "Des activités pour aller mieux",
       desc: "Respiration, journal des émotions, gratitude... Des exercices conçus avec des professionnels.",
       bg: `linear-gradient(135deg, ${C.green}, #5AA882)`,
     },
     {
-      emoji: "💬",
+      icon: (
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+      ),
       title: "Tu n'es pas seul·e",
       desc: "Parle à des soignants, des pair-aidants, rejoins une communauté qui comprend ce que tu traverses.",
       bg: `linear-gradient(135deg, ${C.orange}, #E07D3F)`,
     },
     {
-      emoji: "💜",
+      icon: (
+        <svg width="90" height="90" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+        </svg>
+      ),
       title: "Aucun jugement, aucune pression",
       desc: "Heidi ne récompense pas la performance. Il valorise ta présence et tes petits pas.",
       bg: `linear-gradient(135deg, ${C.pink}, #D06090)`,
@@ -2350,7 +2374,7 @@ function OnboardingScreen({ onFinish }) {
       fontFamily: "'Inter', system-ui, sans-serif", transition: "background 0.5s" }}>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 80, marginBottom: 24 }}>{slide.emoji}</div>
+        <div style={{ marginBottom: 24, opacity: 0.95 }}>{slide.icon}</div>
         <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginBottom: 16, lineHeight: 1.3 }}>{slide.title}</div>
         <div style={{ fontSize: 16, color: "rgba(255,255,255,0.85)", lineHeight: 1.8, maxWidth: 320 }}>{slide.desc}</div>
       </div>
