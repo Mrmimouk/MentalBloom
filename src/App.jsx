@@ -147,7 +147,7 @@ const S = {
   SCAN: "scan", JOURNAL: "journal", GRATITUDE: "gratitude", COGNITIF: "cognitif",
   COMMUNAUTE: "communaute", HUMEUR: "humeur", URGENCES: "urgences", RAPPELS: "rappels",
   CHAT: "chat", CHAT_ROOM: "chat_room", LIVE: "live",
-  RESOURCES: "resources", FICHE: "fiche", PROFILE: "profile",
+  RESOURCES: "resources", FICHE: "fiche", PROFILE: "profile", MON_PROFIL: "mon_profil",
 };
 
 // ─── Data ─────────────────────────────────────────────────────
@@ -526,6 +526,7 @@ function HomeScreen({ setScreen, quests, coins, user, currentAvatar, setCurrentA
           { svg: "mood", label: "Mon humeur", sub: "Suivi émotionnel", s: S.HUMEUR, color: C.green },
           { svg: "emergency", label: "Urgences", sub: "Contacts & structures", s: S.URGENCES, color: "#E05A5A" },
           { svg: "reminders", label: "Rappels", sub: "Doux et sans pression", s: S.RAPPELS, color: C.orange },
+          { svg: "profile", label: "Mes infos", sub: "Modifier mon profil", s: S.MON_PROFIL, color: "#7090B0" },
         ].map(item => (
           <Card key={item.s} onClick={() => setScreen(item.s)} style={{ borderTop: `3px solid ${item.color}`, padding: "14px 12px", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
@@ -2653,7 +2654,150 @@ function RegisterScreen({ onRegister, onGoLogin }) {
   );
 }
 
-function Heidi({ user, onLogout }) {
+// ─── Écran Mes informations personnelles ─────────────────────
+function MonProfilScreen({ onBack, user, onUpdateUser }) {
+  const [ville, setVille] = useState(user?.ville || "");
+  const [codePostal, setCodePostal] = useState(user?.codePostal || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [lienParente, setLienParente] = useState(user?.lienParente || "");
+  const [profession, setProfession] = useState(user?.profession || "");
+  const [maladies, setMaladies] = useState(user?.maladies || []);
+  const [maladieFree, setMaladieFree] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const MALADIES = ["Dépression", "Anxiété généralisée", "Trouble bipolaire", "Schizophrénie", "TOC", "PTSD", "Trouble borderline", "Troubles alimentaires", "Phobie sociale", "TDAH", "Autisme"];
+  const LIENS = ["Parent", "Enfant", "Conjoint·e", "Frère / Sœur", "Grand-parent", "Ami·e proche", "Tuteur·trice", "Autre"];
+  const PROFESSIONS = ["Psychiatre", "Psychologue", "Psychothérapeute", "Infirmier·ère", "Médecin généraliste", "Éducateur·trice spécialisé·e", "Assistant·e social·e", "Pair-aidant·e", "Autre"];
+  const PROFIL_LABELS = { souffrance: "Personne en souffrance", proche: "Proche d'une personne en souffrance", ami: "Ami·e qui vient soutenir", specialiste: "Professionnel de santé mentale", visiteur: "Visiteur·trice", modo: "Modérateur·trice" };
+  const PROFIL_COLORS = { souffrance: C.purple, proche: C.green, ami: C.orange, specialiste: C.pink, visiteur: "#7090B0", modo: "#2060A0" };
+  const profilColor = PROFIL_COLORS[user?.profil] || C.purple;
+
+  const toggleMaladie = (m) => setMaladies(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+
+  const handleSave = () => {
+    const updated = {
+      ...user,
+      ville, codePostal, email,
+      lienParente: user?.profil === "proche" ? lienParente : user?.lienParente,
+      profession: user?.profil === "specialiste" ? profession : user?.profession,
+      maladies: user?.profil === "souffrance" ? [...maladies, maladieFree].filter(Boolean) : user?.maladies,
+    };
+    onUpdateUser(updated);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const Row = ({ label, val }) => (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
+      <div style={{ fontSize: 13, color: C.muted }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{val || "—"}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: "20px 16px", paddingBottom: 40 }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Mes informations</div>
+      <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Visibles uniquement par toi et les modérateurs</div>
+
+      {/* Infos non modifiables */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C.text, marginBottom: 4 }}>Informations fixes</div>
+        <div style={{ fontSize: 12, color: C.muted, marginBottom: 12, background: C.purplePale, padding: "6px 10px", borderRadius: 8 }}>
+          🔒 Ces informations ne peuvent pas être modifiées.
+        </div>
+        <Row label="Prénom" val={user?.prenom} />
+        <Row label="Nom" val={user?.nom} />
+        <Row label="Genre" val={user?.genre} />
+        <Row label="Date de naissance" val={user?.dateNaissance} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
+          <div style={{ fontSize: 13, color: C.muted }}>Profil</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: profilColor }}>{PROFIL_LABELS[user?.profil] || "—"}</div>
+        </div>
+      </Card>
+
+      {/* Infos modifiables */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontWeight: 700, color: C.text, marginBottom: 12 }}>Informations modifiables</div>
+
+        {/* Email */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 5 }}>Email</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} type="email"
+            style={{ width: "100%", padding: "11px 14px", borderRadius: 12, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit" }} />
+        </div>
+
+        {/* Ville + code postal */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10, marginBottom: 14 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 5 }}>Ville</label>
+            <input value={ville} onChange={e => setVille(e.target.value)} placeholder="Ta ville"
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 12, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit" }} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 5 }}>Code postal</label>
+            <input value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="75001" maxLength={5}
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 12, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit" }} />
+          </div>
+        </div>
+
+        {/* Champs spécifiques selon profil */}
+        {user?.profil === "souffrance" && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 8 }}>Pathologie(s)</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+              {MALADIES.map(m => (
+                <button key={m} onClick={() => toggleMaladie(m)}
+                  style={{ padding: "5px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600, border: maladies.includes(m) ? `2px solid ${C.purple}` : `2px solid ${C.border}`, background: maladies.includes(m) ? C.purplePale : "#fff", cursor: "pointer", color: C.text }}>{m}</button>
+              ))}
+            </div>
+            <input value={maladieFree} onChange={e => setMaladieFree(e.target.value)} placeholder="Autre..."
+              style={{ width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 13, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit" }} />
+          </div>
+        )}
+
+        {user?.profil === "proche" && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 5 }}>Lien de parenté</label>
+            <select value={lienParente} onChange={e => setLienParente(e.target.value)}
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 12, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit", color: C.text }}>
+              <option value="">— Sélectionner —</option>
+              {LIENS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+        )}
+
+        {user?.profil === "specialiste" && (
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 13, fontWeight: 700, color: C.text, display: "block", marginBottom: 5 }}>Profession</label>
+            <select value={profession} onChange={e => setProfession(e.target.value)}
+              style={{ width: "100%", padding: "11px 14px", borderRadius: 12, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit", color: C.text }}>
+              <option value="">— Sélectionner —</option>
+              {PROFESSIONS.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        )}
+      </Card>
+
+      {/* Bouton sauvegarder */}
+      <button onClick={handleSave}
+        style={{ width: "100%", padding: 14, borderRadius: 50, background: saved ? C.green : C.purple,
+          color: "#fff", border: "none", fontWeight: 800, fontSize: 15, cursor: "pointer",
+          transition: "background 0.3s", marginBottom: 12 }}>
+        {saved ? "✓ Sauvegardé !" : "Sauvegarder les modifications"}
+      </button>
+
+      <Card style={{ background: C.purplePale, border: "none" }}>
+        <p style={{ margin: 0, fontSize: 13, color: C.text, lineHeight: 1.7 }}>
+          🔒 <strong>Tes données t'appartiennent.</strong> Heïdi respecte le RGPD. Aucune information n'est vendue ni partagée.
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+
+function Heidi({ user, setUser, onLogout }) {
   const [screen, setScreen] = useState(S.HOME);
   const [chatContact, setChatContact] = useState(null);
   const [fiche, setFiche] = useState(null);
@@ -2707,6 +2851,7 @@ function Heidi({ user, onLogout }) {
         {screen === S.RESOURCES && <ResourcesScreen onBack={() => setScreen(S.HOME)} setScreen={setScreen} setFiche={setFiche} />}
         {screen === S.FICHE && <FicheScreen onBack={() => setScreen(S.RESOURCES)} fiche={fiche} />}
         {screen === S.PROFILE && <ProfileScreen onBack={() => setScreen(S.HOME)} coins={coins} quests={quests} mode={mode} setMode={setMode} user={user} onLogout={onLogout} />}
+        {screen === S.MON_PROFIL && <MonProfilScreen onBack={() => setScreen(S.HOME)} user={user} onUpdateUser={(u) => { setUser(u); localStorage.setItem("mb_current_user", JSON.stringify(u)); }} />}
       </div>
 
       <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: C.bgCard, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "8px 0 16px" }}>
@@ -2753,7 +2898,7 @@ export default function App() {
   if (authState === "onboarding") return <OnboardingScreen onFinish={() => setAuthState("login")} />;
   if (authState === "login") return <LoginScreen onLogin={handleLogin} onGoRegister={() => setAuthState("register")} />;
   if (authState === "register") return <RegisterScreen onRegister={handleLogin} onGoLogin={() => setAuthState("login")} />;
-  if (authState === "app") return <Heidi user={currentUser} onLogout={handleLogout} />;
+  if (authState === "app") return <Heidi user={currentUser} setUser={setCurrentUser} onLogout={handleLogout} />;
 
   return null;
 }
