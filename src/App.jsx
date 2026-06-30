@@ -1956,7 +1956,7 @@ function ResourcesScreen({ onBack, setScreen, setFiche }) {
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Ressources 📚</div>
       <div style={{ fontSize: 13, color: C.muted, marginBottom: 16 }}>Informations validées par des professionnels</div>
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-        {["fiches", "médicaments", "urgences", "droits"].map(t => (
+        {["fiches", "médicaments", "droits"].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 14px", borderRadius: 20, border: "none", background: tab === t ? C.purple : C.border, color: tab === t ? "#fff" : C.muted, fontWeight: 700, fontSize: 12, cursor: "pointer", textTransform: "capitalize" }}>
             {t}
           </button>
@@ -1994,25 +1994,6 @@ function ResourcesScreen({ onBack, setScreen, setFiche }) {
           <Card style={{ background: C.purplePale, border: "none" }}>
             <p style={{ margin: 0, fontSize: 13, color: C.text }}>💊 Ces fiches sont informatives. Ne modifiez jamais un traitement sans votre médecin.</p>
           </Card>
-        </div>
-      )}
-
-      {tab === "urgences" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Card style={{ background: "#FEE2E2", border: `1px solid ${C.urgent}44` }}>
-            <div style={{ fontWeight: 800, color: C.urgent, fontSize: 18 }}>🆘 3114</div>
-            <div style={{ color: C.text, fontSize: 14 }}>Numéro national de prévention du suicide</div>
-            <div style={{ color: C.muted, fontSize: 13 }}>Gratuit · 24h/24 · 7j/7 · Confidentiel</div>
-            <Btn color={C.urgent} small style={{ marginTop: 10 }}>Appeler maintenant</Btn>
-          </Card>
-          {URGENCES.map((u, i) => (
-            <Card key={i}>
-              <div style={{ fontWeight: 700, color: C.text }}>{u.nom}</div>
-              <div style={{ fontSize: 13, color: C.muted }}>📍 {u.ville}</div>
-              <div style={{ fontSize: 13, color: C.muted }}>📞 {u.tel}</div>
-              <div style={{ fontSize: 13, color: C.green, fontWeight: 600 }}>⏰ {u.ouvert}</div>
-            </Card>
-          ))}
         </div>
       )}
 
