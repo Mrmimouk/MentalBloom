@@ -147,7 +147,7 @@ const S = {
   SCAN: "scan", JOURNAL: "journal", GRATITUDE: "gratitude", COGNITIF: "cognitif",
   COMMUNAUTE: "communaute", HUMEUR: "humeur", URGENCES: "urgences", RAPPELS: "rappels",
   CHAT: "chat", CHAT_ROOM: "chat_room", LIVE: "live",
-  RESOURCES: "resources", FICHE: "fiche", PROFILE: "profile", MON_PROFIL: "mon_profil",
+  RESOURCES: "resources", FICHE: "fiche", PROFILE: "profile", MON_PROFIL: "mon_profil", PARAMETRES: "parametres",
 };
 
 // ─── Data ─────────────────────────────────────────────────────
@@ -237,6 +237,11 @@ function Icon({ name, size = 28, color = "currentColor" }) {
     arrow: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
     send: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
     back: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+    settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+    logout: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+    lock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+    trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+    info: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
   };
   return icons[name] || null;
 }
@@ -527,6 +532,7 @@ function HomeScreen({ setScreen, quests, coins, user, currentAvatar, setCurrentA
           { svg: "emergency", label: "Urgences", sub: "Contacts & structures", s: S.URGENCES, color: "#E05A5A" },
           { svg: "reminders", label: "Rappels", sub: "Doux et sans pression", s: S.RAPPELS, color: C.orange },
           { svg: "profile", label: "Mes infos", sub: "Modifier mon profil", s: S.MON_PROFIL, color: "#7090B0" },
+          { svg: "settings", label: "Paramètres", sub: "Compte & préférences", s: S.PARAMETRES, color: "#607090" },
         ].map(item => (
           <Card key={item.s} onClick={() => setScreen(item.s)} style={{ borderTop: `3px solid ${item.color}`, padding: "14px 12px", textAlign: "center" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
@@ -2655,6 +2661,183 @@ function RegisterScreen({ onRegister, onGoLogin }) {
 }
 
 // ─── Écran Mes informations personnelles ─────────────────────
+// ─── Paramètres ───────────────────────────────────────────────
+function ParametresScreen({ onBack, onLogout, user }) {
+  const [notifs, setNotifs] = useState(true);
+  const [notifsRappels, setNotifsRappels] = useState(true);
+  const [notifsCommu, setNotifsCommu] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [mdpActuel, setMdpActuel] = useState("");
+  const [mdpNouveau, setMdpNouveau] = useState("");
+  const [mdpConfirm, setMdpConfirm] = useState("");
+  const [mdpMsg, setMdpMsg] = useState("");
+  const [section, setSection] = useState(null);
+
+  const Toggle = ({ val, onToggle }) => (
+    <button onClick={onToggle} style={{
+      width: 50, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
+      background: val ? C.purple : C.border, transition: "background 0.2s",
+      display: "flex", alignItems: "center", padding: "0 3px",
+      justifyContent: val ? "flex-end" : "flex-start", flexShrink: 0,
+    }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
+    </button>
+  );
+
+  const SectionBtn = ({ icon, label, color = C.text, bg = C.bgCard, onClick, danger = false }) => (
+    <button onClick={onClick} style={{
+      width: "100%", display: "flex", alignItems: "center", gap: 14,
+      padding: "14px 16px", background: bg, border: "none",
+      borderBottom: `1px solid ${C.border}`, cursor: "pointer", textAlign: "left",
+    }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10,
+        background: danger ? "#FEE2E2" : C.purplePale,
+        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon name={icon} size={18} color={danger ? C.urgent : C.purple} />
+      </div>
+      <div style={{ flex: 1, fontWeight: 600, color, fontSize: 14 }}>{label}</div>
+      <Icon name="arrow" size={16} color={C.muted} />
+    </button>
+  );
+
+  return (
+    <div style={{ padding: "20px 16px", paddingBottom: 40 }}>
+      <BackBtn onBack={onBack} />
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 20 }}>Paramètres ⚙️</div>
+
+      {/* ── Notifications ── */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 8, marginLeft: 4 }}>NOTIFICATIONS</div>
+      <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+        {[
+          { label: "Rappels quotidiens", sub: "Quêtes et exercices", val: notifsRappels, set: setNotifsRappels },
+          { label: "Communauté", sub: "Réponses et mentions", val: notifsCommu, set: setNotifsCommu },
+          { label: "Toutes les notifications", sub: "Activer ou tout désactiver", val: notifs, set: setNotifs },
+        ].map((n, i, arr) => (
+          <div key={n.label} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderBottom: i < arr.length-1 ? `1px solid ${C.border}` : "none" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>{n.label}</div>
+              <div style={{ fontSize: 12, color: C.muted }}>{n.sub}</div>
+            </div>
+            <Toggle val={n.val} onToggle={() => n.set(v => !v)} />
+          </div>
+        ))}
+      </Card>
+
+      {/* ── Sécurité ── */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 8, marginLeft: 4 }}>SÉCURITÉ</div>
+      <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+        <SectionBtn icon="lock" label="Changer le mot de passe" onClick={() => setSection(section === "mdp" ? null : "mdp")} />
+        {section === "mdp" && (
+          <div style={{ padding: "16px 16px", background: C.purplePale, borderTop: `1px solid ${C.border}` }}>
+            {[
+              { label: "Mot de passe actuel", val: mdpActuel, set: setMdpActuel, ph: "••••••••" },
+              { label: "Nouveau mot de passe", val: mdpNouveau, set: setMdpNouveau, ph: "6 caractères min." },
+              { label: "Confirmer le nouveau", val: mdpConfirm, set: setMdpConfirm, ph: "••••••••" },
+            ].map(f => (
+              <div key={f.label} style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: C.text, display: "block", marginBottom: 4 }}>{f.label}</label>
+                <input value={f.val} onChange={e => f.set(e.target.value)} type="password" placeholder={f.ph}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 14, border: `1px solid ${C.border}`, outline: "none", background: "#fff", boxSizing: "border-box", fontFamily: "inherit" }} />
+              </div>
+            ))}
+            {mdpMsg && <div style={{ fontSize: 13, color: mdpMsg.includes("✓") ? C.green : C.urgent, marginBottom: 10, fontWeight: 600 }}>{mdpMsg}</div>}
+            <button onClick={() => {
+              if (!mdpActuel) { setMdpMsg("Entre ton mot de passe actuel."); return; }
+              if (mdpNouveau.length < 6) { setMdpMsg("Le nouveau mot de passe doit faire 6 caractères min."); return; }
+              if (mdpNouveau !== mdpConfirm) { setMdpMsg("Les mots de passe ne correspondent pas."); return; }
+              setMdpMsg("✓ Mot de passe modifié !");
+              setMdpActuel(""); setMdpNouveau(""); setMdpConfirm("");
+              setTimeout(() => setSection(null), 1500);
+            }} style={{ width: "100%", padding: 11, borderRadius: 50, background: C.purple, color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Modifier le mot de passe
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {/* ── À propos ── */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 8, marginLeft: 4 }}>À PROPOS</div>
+      <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+        <SectionBtn icon="info" label="Conditions d'utilisation" onClick={() => {}} />
+        <SectionBtn icon="info" label="Politique de confidentialité (RGPD)" onClick={() => {}} />
+        <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontWeight: 600, color: C.text, fontSize: 14 }}>Version</div>
+            <div style={{ fontSize: 12, color: C.muted }}>Heïdi v1.0.0</div>
+          </div>
+        </div>
+        <div style={{ padding: "14px 16px" }}>
+          <div style={{ fontWeight: 600, color: C.text, fontSize: 14, marginBottom: 4 }}>À propos de Heïdi 💜</div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.7 }}>
+            Heïdi a été créée en hommage à une amie dont c'était le rêve. Cette application est dédiée à tous ceux qui traversent des moments difficiles.
+          </div>
+        </div>
+      </Card>
+
+      {/* ── Compte ── */}
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: 1, marginBottom: 8, marginLeft: 4 }}>COMPTE</div>
+      <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 13, color: C.muted }}>Connecté en tant que</div>
+          <div style={{ fontWeight: 700, color: C.text, marginTop: 2 }}>{user?.prenom} {user?.nom}</div>
+          <div style={{ fontSize: 13, color: C.muted }}>{user?.email}</div>
+        </div>
+
+        {/* Déconnexion */}
+        <button onClick={onLogout} style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 14,
+          padding: "14px 16px", background: "#FFF5F5", border: "none",
+          borderBottom: `1px solid ${C.border}`, cursor: "pointer", textAlign: "left",
+        }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="logout" size={18} color={C.urgent} />
+          </div>
+          <div style={{ flex: 1, fontWeight: 700, color: C.urgent, fontSize: 14 }}>Se déconnecter</div>
+          <Icon name="arrow" size={16} color={C.muted} />
+        </button>
+
+        {/* Supprimer compte */}
+        <button onClick={() => setConfirmDelete(true)} style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 14,
+          padding: "14px 16px", background: "#FFF5F5", border: "none",
+          cursor: "pointer", textAlign: "left",
+        }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "#FEE2E2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="trash" size={18} color={C.urgent} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, color: C.urgent, fontSize: 14 }}>Supprimer mon compte</div>
+            <div style={{ fontSize: 11, color: C.muted }}>Action irréversible</div>
+          </div>
+        </button>
+      </Card>
+
+      {/* Modal confirmation suppression */}
+      {confirmDelete && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 24, width: "100%", maxWidth: 380 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 8 }}>Supprimer mon compte ?</div>
+            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.7, marginBottom: 20 }}>
+              Toutes tes données seront définitivement supprimées. Cette action est irréversible.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmDelete(false)}
+                style={{ flex: 1, padding: 12, borderRadius: 50, background: C.border, color: C.muted, border: "none", fontWeight: 700, cursor: "pointer" }}>
+                Annuler
+              </button>
+              <button onClick={() => { setConfirmDelete(false); onLogout(); }}
+                style={{ flex: 1, padding: 12, borderRadius: 50, background: C.urgent, color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function MonProfilScreen({ onBack, user, onUpdateUser }) {
   const [ville, setVille] = useState(user?.ville || "");
   const [codePostal, setCodePostal] = useState(user?.codePostal || "");
@@ -2852,6 +3035,7 @@ function Heidi({ user, setUser, onLogout }) {
         {screen === S.FICHE && <FicheScreen onBack={() => setScreen(S.RESOURCES)} fiche={fiche} />}
         {screen === S.PROFILE && <ProfileScreen onBack={() => setScreen(S.HOME)} coins={coins} quests={quests} mode={mode} setMode={setMode} user={user} onLogout={onLogout} />}
         {screen === S.MON_PROFIL && <MonProfilScreen onBack={() => setScreen(S.HOME)} user={user} onUpdateUser={(u) => { setUser(u); localStorage.setItem("mb_current_user", JSON.stringify(u)); }} />}
+        {screen === S.PARAMETRES && <ParametresScreen onBack={() => setScreen(S.HOME)} user={user} onLogout={onLogout} />}
       </div>
 
       <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: C.bgCard, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "8px 0 16px" }}>
